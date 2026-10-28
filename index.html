@@ -1,0 +1,4974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RideQuetta &mdash; Book a Rickshaw Anywhere in Quetta</title>
+  <meta name="description" content="Quetta's dedicated rickshaw booking startup. Upfront fare estimates, convenient booking requests, and driver opportunities across Quetta, Pakistan."/>
+  <meta name="theme-color" content="#0f3b2e"/>
+
+  <!-- Open Graph / Meta -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="RideQuetta &mdash; Book a Rickshaw Anywhere in Quetta"/>
+  <meta property="og:description" content="Upfront fare estimates, convenient booking requests, and driver opportunities across Quetta."/>
+  <meta property="og:url" content="https://ridequetta.local/"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+
+  <!-- Favicon SVG Data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f3b2e'/%3E%3Cpath d='M6 22h20M9 22l2-8h10l2 8M8 14l3-6h10l3 6' stroke='%23f5b301' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='10' cy='23' r='2.5' fill='%23ffffff'/%3E%3Ccircle cx='22' cy='23' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E"/>
+
+  <!-- Google Fonts Preconnect & Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet"/>
+
+  <!-- Leaflet CDN CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <style>
+
+  /* RESET & ROOT VARIABLES */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --brand-900: #0f3b2e;
+    --brand-600: #16805f;
+    --brand-500: #1fa37a;
+    --accent-500: #f5b301;
+    --accent-600: #d99a00;
+    --ink-900: #14181b;
+    --ink-600: #4a545b;
+    --ink-300: #8c979e;
+    --paper: #fbf8f2;
+    --paper-soft: #f4eee2;
+    --card: #ffffff;
+    --line: rgba(20,24,27,0.10);
+    --line-subtle: rgba(20,24,27,0.06);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Cinematic Sky interpolation */
+    --sky-top: #152536;
+    --sky-bottom: #e59062;
+    --glow: rgba(245, 179, 1, 0.18);
+    
+    /* Dynamic scene variables updated by rAF lerp */
+    --p: 0;
+    --p-in: 0;
+    --p-out: 0;
+    --mx: 50%;
+    --my: 50%;
+
+    /* Layered shadows */
+    --shadow-sm: 0 2px 4px rgba(15, 59, 46, 0.04), 0 1px 2px rgba(15, 59, 46, 0.06);
+    --shadow-md: 0 6px 16px -2px rgba(15, 59, 46, 0.08), 0 2px 6px -1px rgba(15, 59, 46, 0.05);
+    --shadow-lg: 0 20px 32px -8px rgba(15, 59, 46, 0.12), 0 8px 16px -4px rgba(15, 59, 46, 0.08);
+    --shadow-glow: 0 0 28px rgba(245, 179, 1, 0.28);
+    --shadow-card: 0 1px 3px rgba(20,24,27,0.05), 0 10px 24px -5px rgba(20,24,27,0.06);
+
+    /* Easing */
+    --ease-expo: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+    
+    /* Layout */
+    --header-height: 72px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+    background-color: var(--paper);
+    color: var(--ink-900);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    background-color: var(--paper);
+    color: var(--ink-900);
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* ACCESSIBLE FOCUS & SELECTION */
+  ::selection {
+    background-color: var(--accent-500);
+    color: var(--brand-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-500);
+    outline-offset: 3px;
+  }
+
+  /* CUSTOM SCROLLBAR */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--paper-soft);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--brand-500);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--brand-600);
+  }
+
+  /* SKIP LINK */
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 16px;
+    background: var(--brand-900);
+    color: #fff;
+    padding: 12px 20px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    z-index: 999999;
+    transition: top 0.2s var(--ease-expo);
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
+
+  /* TYPOGRAPHY */
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    color: var(--brand-900);
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 5.5vw + 1rem, 4.2rem);
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 3.5vw + 0.5rem, 2.75rem);
+  }
+
+  h3 {
+    font-size: clamp(1.25rem, 2vw + 0.5rem, 1.65rem);
+  }
+
+  p {
+    color: var(--ink-600);
+  }
+
+  /* UTILITY CLASSES */
+  .container {
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .text-brand { color: var(--brand-600); }
+  .text-accent { color: var(--accent-600); }
+  .bg-brand { background-color: var(--brand-900); }
+  .text-white { color: #ffffff !important; }
+
+  /* SUBTLE TRUCK-ART / GEOMETRIC ACCENTS */
+  .truck-art-border {
+    position: relative;
+  }
+  .truck-art-border::after {
+    content: '';
+    display: block;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--brand-600) 0,
+      var(--brand-600) 12px,
+      var(--accent-500) 12px,
+      var(--accent-500) 24px,
+      #d84a38 24px,
+      #d84a38 36px,
+      #2563eb 36px,
+      #2563eb 48px
+    );
+    opacity: 0.85;
+    width: 100%;
+  }
+
+  .diamond-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .diamond-divider::before, .diamond-divider::after {
+    content: '';
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(90deg, transparent, var(--line), transparent);
+  }
+  .diamond-divider span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--accent-500);
+    transform: rotate(45deg);
+  }
+
+  /* FILM GRAIN & VIGNETTE OVERLAY */
+  .film-grain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 99990;
+    opacity: 0.035;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  .vignette-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 99989;
+    background: radial-gradient(circle at 50% 50%, transparent 65%, rgba(15, 30, 25, 0.15) 100%);
+  }
+
+  /* CUSTOM CURSOR (DESKTOP FINE POINTER ONLY) */
+  @media (pointer: fine) {
+    body {
+      cursor: default;
+    }
+    .custom-cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 22px;
+      height: 22px;
+      border: 1.5px solid var(--accent-500);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 999999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s var(--ease-expo), height 0.2s var(--ease-expo), border-color 0.2s ease, background-color 0.2s ease;
+      transform-origin: center center;
+    }
+    .custom-cursor.hovering {
+      width: 44px;
+      height: 44px;
+      background: rgba(245, 179, 1, 0.15);
+      border-color: var(--accent-600);
+    }
+  }
+  @media (pointer: coarse) {
+    .custom-cursor { display: none !important; }
+  }
+
+  /* OPENING TITLES PRELOADER */
+  .preloader-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #091310;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s var(--ease-expo), visibility 0.8s;
+  }
+  .preloader-screen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .letterbox-bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 12vh;
+    background: #000;
+    z-index: 2;
+    transition: transform 0.8s var(--ease-expo);
+  }
+  .letterbox-top { top: 0; }
+  .letterbox-bottom { bottom: 0; }
+  .preloader-screen.fade-out .letterbox-top { transform: translateY(-100%); }
+  .preloader-screen.fade-out .letterbox-bottom { transform: translateY(100%); }
+
+  .preloader-stage {
+    position: relative;
+    width: 320px;
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .preloader-rickshaw {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    animation: preloader-drive 3s ease-in-out forwards;
+  }
+  .headlight-beam {
+    position: absolute;
+    right: -120px;
+    top: 25px;
+    width: 140px;
+    height: 60px;
+    background: radial-gradient(ellipse at left, rgba(245, 179, 1, 0.7) 0%, rgba(245, 179, 1, 0) 70%);
+    clip-path: polygon(0 40%, 100% 0, 100% 100%, 0 60%);
+    animation: headlight-flicker 2.5s ease forwards;
+  }
+  .preloader-title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+    margin-top: 16px;
+    letter-spacing: 0.08em;
+    display: flex;
+    gap: 2px;
+  }
+  .preloader-title span {
+    opacity: 0;
+    transform: translateY(10px);
+    display: inline-block;
+    animation: letter-reveal 0.4s var(--ease-expo) forwards;
+  }
+  .preloader-tagline {
+    font-size: 0.85rem;
+    color: var(--accent-500);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    opacity: 0;
+    animation: fadeIn 0.8s 1.2s forwards;
+  }
+  .preloader-screen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none !important;
+  }
+
+  .btn-skip-intro {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #0f3b2e;
+    border: 2px solid #f5b301;
+    color: #ffffff;
+    padding: 10px 22px;
+    border-radius: 28px;
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    z-index: 1000005;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-skip-intro:hover {
+    background: #16805f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(245, 179, 1, 0.5);
+  }
+
+  @keyframes preloader-drive {
+    0% { transform: translateX(-60px); opacity: 0; }
+    30% { transform: translateX(0); opacity: 1; }
+    80% { transform: translateX(10px); opacity: 1; }
+    100% { transform: translateX(50px); opacity: 0.8; }
+  }
+  @keyframes headlight-flicker {
+    0%, 20% { opacity: 0; }
+    25% { opacity: 0.8; }
+    28% { opacity: 0.2; }
+    32% { opacity: 0.9; }
+    35% { opacity: 0.4; }
+    40%, 100% { opacity: 1; }
+  }
+  @keyframes letter-reveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* STICKY HEADER */
+  .site-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--header-height);
+    z-index: 1000;
+    background: rgba(251, 248, 242, 0.88);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line-subtle);
+    transition: transform 0.3s var(--ease-expo), background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .site-header.scrolled {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-sm);
+    border-bottom-color: var(--line);
+  }
+  .site-header.header-hidden {
+    transform: translateY(-100%);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  /* LOGO */
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--brand-900);
+  }
+  .logo-mark {
+    width: 38px;
+    height: 38px;
+    background: var(--brand-900);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(15, 59, 46, 0.2);
+    border: 1px solid rgba(245, 179, 1, 0.3);
+  }
+  .logo-text {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .logo-text span {
+    color: var(--brand-500);
+  }
+
+  /* NAVIGATION */
+  .main-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-link {
+    text-decoration: none;
+    color: var(--ink-600);
+    font-size: 0.92rem;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    transition: color 0.2s ease, background-color 0.2s ease;
+    position: relative;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--brand-900);
+    background-color: rgba(15, 59, 46, 0.05);
+  }
+  .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    background: var(--brand-500);
+    border-radius: 2px;
+  }
+
+  /* HEADER ACTIONS */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-audio {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    cursor: pointer;
+    color: var(--ink-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  .btn-audio:hover {
+    color: var(--brand-900);
+    border-color: var(--brand-500);
+  }
+  .btn-audio.active {
+    background: rgba(31, 163, 122, 0.1);
+    color: var(--brand-600);
+    border-color: var(--brand-500);
+  }
+
+  /* PRIMARY BUTTONS */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-900));
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s var(--ease-expo), box-shadow 0.2s ease, background 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+    transform: rotate(25deg);
+    transition: left 0.6s ease;
+  }
+  .btn-primary:hover::after {
+    left: 120%;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 59, 46, 0.25);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #fff;
+    color: var(--brand-900);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-expo), border-color 0.2s ease, background-color 0.2s ease;
+  }
+  .btn-secondary:hover {
+    border-color: var(--brand-500);
+    background-color: var(--paper-soft);
+    transform: translateY(-2px);
+  }
+
+  /* HAMBURGER BUTTON & MOBILE DRAWER */
+  .hamburger-btn {
+    display: none;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    cursor: pointer;
+    color: var(--ink-900);
+  }
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 290px;
+    height: 100vh;
+    background: #fff;
+    z-index: 10000;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.12);
+    transform: translateX(100%);
+    transition: transform 0.35s var(--ease-expo);
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+  }
+  .mobile-drawer.open {
+    transform: translateX(0);
+  }
+  .drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .drawer-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .drawer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .drawer-nav .nav-link {
+    font-size: 1.1rem;
+    padding: 12px;
+  }
+
+  /* HERO SECTION (DAWN OVER CHILTAN) */
+  .hero-section {
+    position: relative;
+    min-height: calc(100vh - var(--header-height));
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+    color: #fff;
+    padding: 60px 0 80px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+  .hero-parallax-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .parallax-layer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-repeat: repeat-x;
+    background-position: bottom center;
+    transition: transform 0.1s ease-out;
+  }
+  .layer-chiltan-mountains {
+    height: 48%;
+    opacity: 0.45;
+  }
+  .layer-city-skyline {
+    height: 32%;
+    opacity: 0.65;
+  }
+  .layer-road-strip {
+    height: 80px;
+    background: #111a17;
+    border-top: 2px solid var(--accent-500);
+  }
+  .clouds-container {
+    position: absolute;
+    top: 15%;
+    left: 0;
+    width: 200%;
+    height: 100px;
+    opacity: 0.25;
+    animation: drift-clouds 60s linear infinite;
+  }
+  @keyframes drift-clouds {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .hero-content-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent-500);
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    margin-bottom: 20px;
+  }
+  .hero-badge svg {
+    color: var(--accent-500);
+  }
+
+  .hero-title {
+    color: #fff;
+    margin-bottom: 20px;
+  }
+  .hero-title .highlight {
+    color: var(--accent-500);
+    position: relative;
+    display: inline-block;
+  }
+  .hero-subtext {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 540px;
+    margin-bottom: 32px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  /* IDLING RICKSHAW ANIMATION */
+  .hero-rickshaw-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+  .rickshaw-stage {
+    position: relative;
+    width: 100%;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .animated-rickshaw {
+    width: 240px;
+    height: auto;
+    animation: engine-idle 0.12s infinite alternate ease-in-out;
+    filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.35));
+  }
+  @keyframes engine-idle {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(-1.5px) rotate(0.4deg); }
+  }
+
+  .hero-quote-box {
+    margin-top: 16px;
+    padding: 12px 18px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-500);
+    text-align: left;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .hero-quote-box span {
+    color: var(--accent-500);
+    font-weight: 600;
+  }
+
+  /* SECTION WRAPPERS */
+  section {
+    padding: 96px 0;
+    scroll-margin-top: var(--header-height);
+    position: relative;
+  }
+  .section-header {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 56px;
+  }
+  .section-tag {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-600);
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .section-desc {
+    margin-top: 14px;
+    font-size: 1.05rem;
+  }
+
+  /* BOOKING SECTION ("THE PLAN") */
+  .booking-section {
+    background: var(--paper);
+    padding-top: 80px;
+  }
+  .booking-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 36px;
+    align-items: start;
+  }
+
+  .booking-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+  }
+  .form-group {
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-900);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--brand-600);
+    pointer-events: none;
+    width: 18px;
+    height: 18px;
+  }
+  .form-control {
+    width: 100%;
+    height: 48px;
+    padding: 10px 14px 10px 42px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--ink-900);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .form-control:focus {
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px rgba(31, 163, 122, 0.15);
+  }
+  .form-control[aria-invalid="true"] {
+    border-color: #d84a38;
+    background-color: #fff9f9;
+  }
+  .field-error {
+    font-size: 0.8rem;
+    color: #d84a38;
+    margin-top: 4px;
+    display: none;
+  }
+  .field-error.active {
+    display: block;
+    animation: shake 0.3s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* SWAP BUTTON */
+  .route-swap-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -8px 0 12px;
+  }
+  .btn-swap {
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink-600);
+    transition: transform 0.3s var(--ease-expo), background-color 0.2s ease;
+  }
+  .btn-swap:hover {
+    background: #fff;
+    color: var(--brand-900);
+    transform: rotate(180deg);
+  }
+
+  /* AUTOCOMPLETE COMBOBOX DROPDOWN */
+  .combobox-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+  }
+  .combobox-dropdown.open {
+    display: block;
+  }
+  .combobox-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.15s ease;
+  }
+  .combobox-item:hover, .combobox-item.focused {
+    background: var(--paper-soft);
+    color: var(--brand-900);
+  }
+  .combobox-item .item-type {
+    font-size: 0.75rem;
+    color: var(--ink-300);
+    text-transform: capitalize;
+  }
+
+  /* SEGMENTED RIDE TYPE CONTROLS */
+  .ride-types-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .ride-type-card {
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    cursor: pointer;
+    text-align: left;
+    background: #fff;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .ride-type-card:hover:not(.disabled) {
+    border-color: var(--brand-500);
+    background: rgba(31, 163, 122, 0.03);
+  }
+  .ride-type-card.selected {
+    border-color: var(--brand-600);
+    background: rgba(31, 163, 122, 0.08);
+    box-shadow: 0 0 0 2px rgba(31, 163, 122, 0.25);
+  }
+  .ride-type-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: var(--paper-soft);
+  }
+  .ride-type-name {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--brand-900);
+  }
+  .ride-type-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ink-600);
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* LIVE FARE ESTIMATE CARD */
+  .fare-card {
+    background: linear-gradient(145deg, #ffffff, var(--paper-soft));
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--shadow-card);
+    position: sticky;
+    top: calc(var(--header-height) + 24px);
+  }
+  .fare-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+  }
+  .fare-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(31, 163, 122, 0.12);
+    color: var(--brand-600);
+  }
+  .fare-price-display {
+    text-align: center;
+    padding: 24px 0;
+  }
+  .fare-amount {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--brand-900);
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+  }
+  .fare-amount .currency {
+    font-size: 1.4rem;
+    color: var(--ink-600);
+    font-weight: 600;
+  }
+  .fare-breakdown {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.9rem;
+  }
+  .fare-row {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink-600);
+  }
+  .fare-row.total-row {
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+    font-weight: 700;
+    color: var(--brand-900);
+  }
+  .fare-disclaimer {
+    font-size: 0.78rem;
+    color: var(--ink-600);
+    background: rgba(245, 179, 1, 0.12);
+    border-left: 3px solid var(--accent-500);
+    padding: 8px 12px;
+    border-radius: 4px;
+    line-height: 1.4;
+    margin-top: 18px;
+  }
+
+  /* TRACK A REQUEST SECTION */
+  .track-section {
+    background: #fff;
+    padding: 56px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .track-box {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px 28px;
+  }
+  .track-input-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .track-result-card {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    display: none;
+  }
+  .track-result-card.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  /* AREAS SECTION ("THE JOURNEY") */
+  .areas-section {
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .areas-viewport {
+    position: relative;
+    width: 100%;
+    margin-top: 36px;
+  }
+  .areas-track {
+    display: flex;
+    gap: 20px;
+    padding: 20px 0 40px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .area-card {
+    flex: 0 0 280px;
+    scroll-snap-align: start;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.25s var(--ease-expo), box-shadow 0.25s ease, border-color 0.25s ease;
+    position: relative;
+  }
+  .area-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand-500);
+  }
+  .area-icon-wrap {
+    width: 44px;
+    height: 44px;
+    background: rgba(31, 163, 122, 0.1);
+    color: var(--brand-600);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .area-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ink-600);
+    background: var(--paper-soft);
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .area-name {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+  }
+  .area-desc {
+    font-size: 0.85rem;
+    color: var(--ink-600);
+    margin-bottom: 20px;
+    flex: 1;
+  }
+  .btn-set-pickup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--paper-soft);
+    color: var(--brand-900);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-set-pickup:hover {
+    background: var(--brand-900);
+    color: #fff;
+    border-color: var(--brand-900);
+  }
+
+  /* HOW IT WORKS ("THREE TAKES") */
+  .how-section {
+    background: #fff;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .steps-container {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 48px;
+  }
+  .route-line-svg {
+    position: absolute;
+    top: 48px;
+    left: 10%;
+    width: 80%;
+    height: 4px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .step-card {
+    position: relative;
+    z-index: 2;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 32px 24px;
+    text-align: center;
+    transition: transform 0.3s var(--ease-expo);
+  }
+  .step-card:hover {
+    transform: translateY(-4px);
+  }
+  .step-clapperboard-number {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-500);
+    line-height: 1;
+    margin-bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--brand-900);
+    color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(15, 59, 46, 0.2);
+  }
+  .step-title {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  .step-desc {
+    font-size: 0.9rem;
+    color: var(--ink-600);
+  }
+
+  /* FEATURES SECTION (BENTO GRID - BEHIND THE SCENES) */
+  .features-section {
+    background: var(--paper);
+  }
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .bento-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.25s var(--ease-expo), box-shadow 0.25s ease;
+    perspective: 1000px;
+  }
+  .bento-card.span-2 {
+    grid-column: span 2;
+  }
+  .bento-card::before {
+    content: '';
+    position: absolute;
+    top: var(--my, 50%);
+    left: var(--mx, 50%);
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(31, 163, 122, 0.12) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .bento-card:hover::before {
+    opacity: 1;
+  }
+  .bento-card:hover {
+    transform: translateY(-4px) rotateX(1deg);
+    box-shadow: var(--shadow-md);
+  }
+  .bento-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(31, 163, 122, 0.12), rgba(245, 179, 1, 0.12));
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-600);
+    margin-bottom: 20px;
+  }
+
+  /* MAP SECTION */
+  .map-section {
+    background: #fff;
+    padding: 72px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .map-wrapper {
+    position: relative;
+    height: 460px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-md);
+  }
+  #map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  .map-fallback-notice {
+    position: absolute;
+    inset: 0;
+    background: var(--paper-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    z-index: 0;
+  }
+  .map-controls-overlay {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* DRIVE WITH US SECTION ("NIGHT SHIFT") */
+  .drive-section {
+    background: linear-gradient(180deg, #0f241d 0%, #081410 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .night-lights-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: 
+      radial-gradient(2px 2px at 15% 30%, #f5b301, transparent),
+      radial-gradient(2px 2px at 45% 15%, #ffffff, transparent),
+      radial-gradient(3px 3px at 70% 40%, #f5b301, transparent),
+      radial-gradient(2px 2px at 85% 25%, #ffffff, transparent);
+  }
+  .drive-section h2, .drive-section h3 {
+    color: #fff;
+  }
+  .drive-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .drive-info-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+  }
+  .drive-form-card {
+    background: #fff;
+    color: var(--ink-900);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    box-shadow: var(--shadow-lg);
+  }
+  .drive-form-card h3 {
+    color: var(--brand-900);
+    margin-bottom: 8px;
+  }
+  .chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .area-chip {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: var(--paper-soft);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .area-chip.selected {
+    background: var(--brand-600);
+    color: #fff;
+    border-color: var(--brand-600);
+  }
+
+  /* WHAT RIDEQUETTA AIMS TO IMPROVE (NO FAKE TESTIMONIALS) */
+  .aims-section {
+    background: var(--paper);
+  }
+  .aims-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .aim-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 32px;
+    border-top: 4px solid var(--brand-500);
+    box-shadow: var(--shadow-sm);
+  }
+  .aim-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--brand-600);
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .aim-quote {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    line-height: 1.4;
+    color: var(--brand-900);
+    margin-bottom: 14px;
+  }
+  .aim-desc {
+    font-size: 0.9rem;
+    color: var(--ink-600);
+  }
+
+  /* FAQ ACCORDION */
+  .faq-section {
+    background: #fff;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .faq-item {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .faq-question {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 20px 24px;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--brand-900);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.2s ease;
+  }
+  .faq-question:hover {
+    background: var(--paper-soft);
+  }
+  .faq-icon {
+    transition: transform 0.3s var(--ease-expo);
+    flex-shrink: 0;
+  }
+  .faq-item.open .faq-icon {
+    transform: rotate(180deg);
+  }
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s var(--ease-expo);
+    padding: 0 24px;
+  }
+  .faq-answer-inner {
+    padding-bottom: 20px;
+    font-size: 0.95rem;
+    color: var(--ink-600);
+    line-height: 1.65;
+  }
+
+  /* APP SECTION ("RIDEQUETTA IS STARTING HERE") */
+  .app-section {
+    background: var(--paper-soft);
+    text-align: center;
+  }
+  .app-card {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 48px 32px;
+    box-shadow: var(--shadow-md);
+  }
+  .app-badge-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .btn-app-coming-soon {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--brand-900);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.2s ease;
+  }
+  .btn-app-coming-soon:hover {
+    transform: translateY(-2px);
+  }
+  .app-btn-text small {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--accent-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .app-btn-text strong {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  /* CONTACT SECTION */
+  .contact-section {
+    background: var(--paper);
+  }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  .contact-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* INFINITE MARQUEE */
+  .marquee-wrapper {
+    background: var(--brand-900);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 16px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    border-top: 2px solid var(--accent-500);
+    border-bottom: 2px solid var(--accent-500);
+  }
+  .marquee-content {
+    display: inline-block;
+    animation: marquee-scroll 35s linear infinite;
+  }
+  .marquee-wrapper:hover .marquee-content {
+    animation-play-state: paused;
+  }
+  .marquee-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .marquee-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent-500);
+    border-radius: 50%;
+  }
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* CLOSING CREDITS FOOTER */
+  .site-footer {
+    background: #091310;
+    color: #cbd5e1;
+    padding: 80px 0 40px;
+    position: relative;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 60px;
+  }
+  .footer-col h4 {
+    color: #fff;
+    font-size: 1.05rem;
+    margin-bottom: 18px;
+  }
+  .footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .footer-col a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+  }
+  .footer-col a:hover {
+    color: var(--accent-500);
+  }
+  .footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+  .btn-back-to-start {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #cbd5e1;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+  .btn-back-to-start:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+  }
+
+  /* MODALS */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 30, 25, 0.65);
+    backdrop-filter: blur(8px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s var(--ease-expo), visibility 0.3s;
+  }
+  .modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-card {
+    background: #fff;
+    width: 100%;
+    max-width: 540px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-lg);
+    padding: 32px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.94);
+    transition: transform 0.3s var(--ease-expo);
+  }
+  .modal-overlay.open .modal-card {
+    transform: scale(1);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: var(--ink-600);
+    padding: 4px;
+    line-height: 1;
+  }
+
+  /* TOAST NOTIFICATIONS */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    background: var(--brand-900);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    border-left: 4px solid var(--accent-500);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(120%);
+    transition: transform 0.3s var(--ease-expo);
+  }
+  .toast.show {
+    transform: translateX(0);
+  }
+
+  /* RESPONSIVE BREAKPOINTS */
+  @media (max-width: 1024px) {
+    .hero-content-grid,
+    .booking-grid,
+    .drive-grid,
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .steps-container {
+      grid-template-columns: 1fr;
+    }
+    .route-line-svg {
+      display: none;
+    }
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+    .bento-card.span-2 {
+      grid-column: span 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-nav, .btn-audio, .btn-header-cta {
+      display: none;
+    }
+    .hamburger-btn {
+      display: block;
+    }
+    .aims-grid {
+      grid-template-columns: 1fr;
+    }
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+    .footer-bottom {
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+    }
+    .ride-types-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* REDUCED MOTION */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .film-grain, .custom-cursor {
+      display: none !important;
+    }
+    .preloader-screen {
+      display: none !important;
+    }
+  }
+
+  </style>
+</head>
+<body>
+
+  <!-- SKIP TO CONTENT -->
+  <a href="#book" class="skip-link">Skip to booking</a>
+
+  <!-- FILM GRAIN & VIGNETTE OVERLAYS -->
+  <div class="film-grain" aria-hidden="true"></div>
+  <div class="vignette-overlay" aria-hidden="true"></div>
+
+  <!-- CUSTOM CURSOR -->
+  <div class="custom-cursor" id="cursor" aria-hidden="true"></div>
+
+  <!-- OPENING TITLES PRELOADER -->
+  <aside class="preloader-screen" id="preloader" aria-label="Introduction">
+    <div class="letterbox-bar letterbox-top"></div>
+    <div class="letterbox-bar letterbox-bottom"></div>
+    <div class="preloader-stage">
+      <div class="preloader-rickshaw">
+        <!-- Three-Wheeled Pakistani Passenger Rickshaw (Single Front Wheel, Open Sides, Canopy) -->
+        <svg viewBox="0 0 140 90" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Front Wheel (Single Front Wheel) -->
+          <circle cx="108" cy="72" r="13" fill="#1c1917" stroke="#e5e5e5" stroke-width="3"/>
+          <circle cx="108" cy="72" r="6" fill="#f5b301"/>
+          <!-- Front Fork & Handlebar -->
+          <path d="M108 72 L96 42 L92 38" stroke="#94a3b8" stroke-width="3.5" stroke-linecap="round"/>
+          <rect x="88" y="36" width="9" height="4" rx="1.5" fill="#1e293b"/>
+          <!-- Front Mudguard -->
+          <path d="M96 64 A15 15 0 0 1 122 69" stroke="#16805f" stroke-width="3.5" fill="none"/>
+          <!-- Headlight -->
+          <circle cx="112" cy="46" r="5" fill="#fde047" stroke="#ca8a04" stroke-width="1.5"/>
+          <!-- Front Apron & Windshield -->
+          <polygon points="95,44 78,20 74,20 90,44" fill="#bbf7d0" opacity="0.8"/>
+          <path d="M95 44 L92 64 L75 64" fill="#16805f" stroke="#0f3b2e" stroke-width="2"/>
+          <!-- Canopy Roof -->
+          <path d="M72 18 Q40 12 14 18 Q10 22 12 28 L14 30 Q40 24 75 25 Z" fill="#091e17" stroke="#f5b301" stroke-width="1.5"/>
+          <line x1="16" y1="28" x2="74" y2="28" stroke="#f5b301" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <!-- Struts -->
+          <line x1="74" y1="22" x2="88" y2="44" stroke="#cbd5e1" stroke-width="2"/>
+          <line x1="48" y1="24" x2="48" y2="60" stroke="#cbd5e1" stroke-width="2"/>
+          <line x1="16" y1="26" x2="16" y2="52" stroke="#cbd5e1" stroke-width="2"/>
+          <!-- Open Cabin & Seats -->
+          <path d="M68 50 C68 47 74 47 74 50 L72 58 L66 58 Z" fill="#1e293b"/>
+          <rect x="22" y="44" width="16" height="14" rx="2" fill="#7f1d1d" stroke="#450a0a"/>
+          <line x1="44" y1="40" x2="44" y2="62" stroke="#e2e8f0" stroke-width="2"/>
+          <!-- Rear Body & Truck Art -->
+          <path d="M12 40 L40 40 L40 64 L14 64 Z" fill="#16805f" stroke="#0f3b2e" stroke-width="2"/>
+          <rect x="14" y="52" width="24" height="8" fill="#f5b301"/>
+          <!-- Rear Wheel (Rear Axle Wheel) -->
+          <circle cx="28" cy="70" r="15" fill="#1c1917" stroke="#e5e5e5" stroke-width="3.5"/>
+          <circle cx="28" cy="70" r="7" fill="#f5b301"/>
+        </svg>
+        <div class="headlight-beam"></div>
+      </div>
+      <div class="preloader-title" id="preloaderTitle">
+        <span style="animation-delay: 0.1s">R</span>
+        <span style="animation-delay: 0.2s">i</span>
+        <span style="animation-delay: 0.3s">d</span>
+        <span style="animation-delay: 0.4s">e</span>
+        <span style="animation-delay: 0.5s; color: var(--accent-500)">Q</span>
+        <span style="animation-delay: 0.6s; color: var(--accent-500)">u</span>
+        <span style="animation-delay: 0.7s; color: var(--accent-500)">e</span>
+        <span style="animation-delay: 0.8s; color: var(--accent-500)">t</span>
+        <span style="animation-delay: 0.9s; color: var(--accent-500)">t</span>
+        <span style="animation-delay: 1.0s; color: var(--accent-500)">a</span>
+      </div>
+      <div class="preloader-tagline">Rickshaw, Quetta ke liye</div>
+    </div>
+    <button type="button" class="btn-skip-intro" id="btnSkipIntro" onclick="(function(){var p=document.getElementById('preloader');if(p){p.classList.add('fade-out');try{sessionStorage.setItem('rq_preloader_played','true');}catch(e){}setTimeout(function(){p.style.display='none';},400);}})();">
+      Skip Intro &rarr;
+    </button>
+  </aside>
+
+  <!-- STICKY SITE HEADER -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <a href="#" class="brand-logo" aria-label="RideQuetta Homepage">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 17h16M7 17l1.5-6h7L17 17M6 11l2-5h8l2 5" stroke="#f5b301"/>
+            <circle cx="7" cy="18" r="2" fill="#fff"/>
+            <circle cx="17" cy="18" r="2" fill="#fff"/>
+          </svg>
+        </div>
+        <span class="logo-text">Ride<span>Quetta</span></span>
+      </a>
+
+      <nav class="main-nav" aria-label="Main Navigation">
+        <a href="#top" class="nav-link active">Home</a>
+        <a href="#book" class="nav-link">Book a Ride</a>
+        <a href="#areas" class="nav-link">Areas We Serve</a>
+        <a href="#how" class="nav-link">How It Works</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#drive" class="nav-link">Drive With Us</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="header-actions">
+        <button type="button" class="btn-audio" id="btnAudioToggle" aria-label="Toggle ambient city audio" title="Ambient Sound">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" id="audioWave1" opacity="0.3"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" id="audioWave2" opacity="0.3"></path>
+          </svg>
+        </button>
+        <a href="#book" class="btn-primary btn-header-cta">Book a Ride</a>
+        <button type="button" class="hamburger-btn" id="btnHamburger" aria-label="Open mobile menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE SLIDE-IN DRAWER -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="mobile-drawer" id="mobileDrawer" aria-label="Mobile Navigation" aria-hidden="true">
+    <div class="drawer-header">
+      <span class="logo-text">Ride<span>Quetta</span></span>
+      <button type="button" class="modal-close-btn" id="btnCloseDrawer" aria-label="Close menu">&times;</button>
+    </div>
+    <nav class="drawer-nav">
+      <a href="#top" class="nav-link drawer-link">Home</a>
+      <a href="#book" class="nav-link drawer-link">Book a Ride</a>
+      <a href="#areas" class="nav-link drawer-link">Areas We Serve</a>
+      <a href="#how" class="nav-link drawer-link">How It Works</a>
+      <a href="#features" class="nav-link drawer-link">Features</a>
+      <a href="#drive" class="nav-link drawer-link">Drive With Us</a>
+      <a href="#contact" class="nav-link drawer-link">Contact</a>
+    </nav>
+    <div style="margin-top: auto; padding-top: 20px;">
+      <a href="#book" class="btn-primary drawer-link" style="width: 100%;">Book a Ride Now</a>
+    </div>
+  </aside>
+
+  <main id="mainContent">
+    <!-- HERO SECTION: DAWN OVER CHILTAN -->
+    <section class="hero-section" id="top">
+      <div class="hero-parallax-stage" aria-hidden="true">
+        <!-- Mountain Silhouette -->
+        <svg class="parallax-layer layer-chiltan-mountains" viewBox="0 0 1200 400" preserveAspectRatio="none" fill="none">
+          <path d="M0 400 L0 260 L90 210 L180 250 L280 160 L400 240 L540 130 L670 230 L800 110 L940 220 L1080 170 L1200 240 L1200 400 Z" fill="#0f2622"/>
+          <path d="M260 160 L280 160 L310 190 L270 200 Z" fill="#ffffff" opacity="0.15"/>
+          <path d="M520 130 L540 130 L570 170 L530 180 Z" fill="#ffffff" opacity="0.2"/>
+          <path d="M780 110 L800 110 L830 150 L790 160 Z" fill="#ffffff" opacity="0.25"/>
+        </svg>
+
+        <!-- Rooftops & Skyline -->
+        <svg class="parallax-layer layer-city-skyline" viewBox="0 0 1200 250" preserveAspectRatio="none" fill="none">
+          <path d="M0 250 L0 180 L40 180 L40 150 L70 150 L70 190 L120 190 L120 130 L140 110 L160 130 L160 190 L240 190 L240 160 L290 160 L340 190 L420 190 L420 140 L460 140 L460 190 L560 190 L590 120 L620 190 L720 190 L750 160 L800 160 L850 190 L920 190 L950 130 L980 190 L1050 190 L1100 150 L1140 150 L1200 190 L1200 250 Z" fill="#0a1a16"/>
+        </svg>
+
+        <!-- Road Base Strip -->
+        <div class="parallax-layer layer-road-strip"></div>
+      </div>
+
+      <div class="container hero-content-grid">
+        <div class="hero-text-col">
+          <div class="hero-badge">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 11.4 7.6 11.9a.6.6 0 0 0 .8 0C13 21.4 20 15.4 20 10a8 8 0 0 0-8-8z"/>
+              <circle cx="12" cy="10" r="2.5"/>
+            </svg>
+            BUILT FOR QUETTA &bull; QUETTA, PAKISTAN
+          </div>
+
+          <h1 class="hero-title">
+            Book a Rickshaw <br/>
+            <span class="highlight">Anywhere in Quetta</span>
+          </h1>
+
+          <p class="hero-subtext">
+            Your city, your ride. Explore a simpler way to plan your next rickshaw journey across Quetta with clear fare estimates and convenient booking requests.
+          </p>
+
+          <div class="hero-ctas">
+            <a href="#book" class="btn-primary">
+              Book a Ride
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </a>
+            <a href="#drive" class="btn-secondary">
+              Become a Driver
+            </a>
+          </div>
+
+          <div class="hero-quote-box">
+            <span>Rickshaw, Quetta ke liye:</span> Authentic local transport designed specifically for the routes, roads, and daily commuting patterns of our valley.
+          </div>
+        </div>
+
+        <!-- HERO GRAPHIC / IDLING RICKSHAW -->
+        <div class="hero-rickshaw-col">
+          <div class="hero-rickshaw-card">
+            <div class="rickshaw-stage">
+              <!-- Authentic Three-Wheeled Pakistani Passenger Auto-Rickshaw -->
+              <svg class="animated-rickshaw" viewBox="0 0 280 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Ground Shadow -->
+                <ellipse cx="140" cy="170" rx="120" ry="7" fill="rgba(0,0,0,0.3)"/>
+
+                <!-- FRONT WHEEL (Single Front Wheel of 3-Wheeler) -->
+                <circle cx="215" cy="148" r="24" fill="#18181b" stroke="#f1f5f9" stroke-width="5"/>
+                <circle cx="215" cy="148" r="11" fill="#f5b301" stroke="#d97706" stroke-width="2"/>
+                <circle cx="215" cy="148" r="4" fill="#18181b"/>
+                <!-- Front Mudguard -->
+                <path d="M192 135 A26 26 0 0 1 238 140" stroke="#0f3b2e" stroke-width="5" fill="none"/>
+                <!-- Steering Fork & Handlebars -->
+                <path d="M215 148 L192 85 L184 76" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+                <rect x="175" y="72" width="18" height="7" rx="3" fill="#1e293b"/>
+                <!-- Round Chrome Headlamp -->
+                <circle cx="222" cy="98" r="11" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
+                <path d="M217 93 Q222 91 226 95" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <!-- Front Nose Apron Shield -->
+                <path d="M192 88 L184 135 Q180 148 160 148 L150 148" fill="#16805f" stroke="#0f3b2e" stroke-width="3"/>
+                <!-- Windshield with Wiper -->
+                <polygon points="190,86 160,34 152,34 180,86" fill="#c7f9cc" opacity="0.75" stroke="#0f3b2e" stroke-width="2"/>
+                <line x1="168" y1="58" x2="182" y2="76" stroke="#334155" stroke-width="2" stroke-linecap="round"/>
+
+                <!-- CANOPY ROOF (Arched Pakistani Rickshaw Canopy with Gold Fringe) -->
+                <path d="M152 32 Q95 20 40 32 Q32 38 35 48 L38 52 Q95 40 155 42 Z" fill="#0b1e17" stroke="#f5b301" stroke-width="3"/>
+                <!-- Truck-Art Fringe Under Canopy -->
+                <path d="M40 50 L46 56 L52 50 L58 56 L64 50 L70 56 L76 50 L82 56 L88 50 L94 56 L100 50 L106 56 L112 50 L118 56 L124 50 L130 56 L136 50 L142 56 L148 50" stroke="#f5b301" stroke-width="2" fill="none"/>
+
+                <!-- ROOF PILLAR TUBES -->
+                <line x1="152" y1="36" x2="182" y2="86" stroke="#cbd5e1" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="98" y1="42" x2="98" y2="138" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+                <line x1="42" y1="46" x2="42" y2="110" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+
+                <!-- OPEN PASSENGER COMPARTMENT (Open entry side with safety bar!) -->
+                <!-- Driver Seat -->
+                <path d="M136 112 C136 104 148 104 148 112 L145 136 L132 136 Z" fill="#1e293b" stroke="#0f172a"/>
+                <!-- Passenger Rear Bench Seat (Visible through open side!) -->
+                <rect x="52" y="100" width="32" height="36" rx="4" fill="#991b1b" stroke="#7f1d1d" stroke-width="2"/>
+                <line x1="56" y1="112" x2="80" y2="112" stroke="#fca5a5" stroke-width="1.5"/>
+                <line x1="56" y1="124" x2="80" y2="124" stroke="#fca5a5" stroke-width="1.5"/>
+                <!-- Chrome Passenger Grab Entry Bar -->
+                <line x1="94" y1="92" x2="94" y2="140" stroke="#e2e8f0" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Footboard / Floor -->
+                <line x1="90" y1="144" x2="160" y2="144" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+
+                <!-- REAR BODY BOX & TRUCK ART PANEL -->
+                <path d="M35 88 L90 88 L90 142 L35 142 Z" fill="#16805f" stroke="#0f3b2e" stroke-width="3"/>
+                <!-- Traditional Truck Art Chevron Panel -->
+                <rect x="38" y="112" width="48" height="20" rx="3" fill="#f5b301" stroke="#b45309" stroke-width="1.5"/>
+                <polygon points="41,122 46,115 51,122 46,129" fill="#dc2626"/>
+                <polygon points="52,122 57,115 62,122 57,129" fill="#2563eb"/>
+                <polygon points="63,122 68,115 73,122 68,129" fill="#16a34a"/>
+                <polygon points="74,122 79,115 84,122 79,129" fill="#dc2626"/>
+
+                <!-- REAR WHEEL (One of rear axle pair under passenger bench) -->
+                <circle cx="65" cy="146" r="26" fill="#18181b" stroke="#f1f5f9" stroke-width="5"/>
+                <circle cx="65" cy="146" r="12" fill="#f5b301" stroke="#d97706" stroke-width="2"/>
+                <circle cx="65" cy="146" r="4" fill="#18181b"/>
+                <!-- Rear Wheel Mudguard Arch -->
+                <path d="M36 142 A30 30 0 0 1 94 142" stroke="#0f3b2e" stroke-width="4" fill="none"/>
+                <!-- Mudflap behind rear wheel -->
+                <polygon points="34,142 32,166 40,166 38,142" fill="#1e293b"/>
+                <circle cx="36" cy="160" r="2" fill="#ef4444"/>
+              </svg>
+            </div>
+            <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); margin-top: 8px;">
+              Three-Wheeled Passenger Rickshaw &bull; Daily Quetta Transit
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRUCK ART ACCENT BORDER -->
+    <div class="truck-art-border" aria-hidden="true"></div>
+
+    <!-- BOOKING SECTION ("THE PLAN") -->
+    <section class="booking-section" id="book">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Take 01 &bull; Instant Request</span>
+          <h2>Plan Your Rickshaw Ride</h2>
+          <p class="section-desc">
+            Select your pickup and destination in Quetta to view upfront fare estimates before submitting your request.
+          </p>
+        </div>
+
+        <div class="booking-grid">
+          <!-- BOOKING FORM CARD -->
+          <div class="booking-card">
+            <form id="bookingForm" novalidate>
+              <!-- Hidden Honeypot & Timestamp -->
+              <input type="text" name="hp_field" style="display:none !important;" tabindex="-1" autocomplete="off"/>
+              <input type="hidden" id="formLoadTime" name="form_load_time"/>
+
+              <!-- Pickup Location Combobox -->
+              <div class="form-group">
+                <label class="form-label" for="pickupInput">Pickup Location *</label>
+                <div class="input-with-icon">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 11.4 7.6 11.9a.6.6 0 0 0 .8 0C13 21.4 20 15.4 20 10a8 8 0 0 0-8-8z"/>
+                    <circle cx="12" cy="10" r="2.5"/>
+                  </svg>
+                  <input 
+                    type="text" 
+                    id="pickupInput" 
+                    class="form-control" 
+                    placeholder="e.g. Jinnah Town, Brewery Road..." 
+                    autocomplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="pickupDropdown"
+                    required
+                  />
+                  <div class="combobox-dropdown" id="pickupDropdown" role="listbox"></div>
+                </div>
+                <div class="field-error" id="pickupError">Please select or enter a valid pickup location.</div>
+              </div>
+
+              <!-- Swap Button -->
+              <div class="route-swap-row">
+                <button type="button" class="btn-swap" id="btnSwapLocations" title="Swap pickup and destination" aria-label="Swap pickup and destination">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="7 10 12 5 17 10"></polyline>
+                    <polyline points="17 14 12 19 7 14"></polyline>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Destination Location Combobox -->
+              <div class="form-group">
+                <label class="form-label" for="destInput">Destination Location *</label>
+                <div class="input-with-icon">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-600)">
+                    <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+                  </svg>
+                  <input 
+                    type="text" 
+                    id="destInput" 
+                    class="form-control" 
+                    placeholder="e.g. Liaquat Bazaar, Quetta Cantt..." 
+                    autocomplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="destDropdown"
+                    required
+                  />
+                  <div class="combobox-dropdown" id="destDropdown" role="listbox"></div>
+                </div>
+                <div class="field-error" id="destError">Please select or enter a valid destination.</div>
+              </div>
+
+              <!-- Map Pin Selection Helper -->
+              <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <button type="button" class="btn-secondary" id="btnUseMap" style="padding: 6px 12px; font-size: 0.82rem;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                  </svg>
+                  Select Points on Map
+                </button>
+              </div>
+
+              <!-- Ride Type Selection -->
+              <div class="form-group">
+                <label class="form-label">Ride Type</label>
+                <div class="ride-types-grid" role="radiogroup" aria-label="Select ride type">
+                  <div class="ride-type-card selected" data-type="standard" role="radio" aria-checked="true" tabindex="0">
+                    <div class="ride-type-name">Standard</div>
+                    <span class="ride-type-badge">Dedicated Rickshaw</span>
+                  </div>
+                  <div class="ride-type-card" data-type="shared" role="radio" aria-checked="false" tabindex="0">
+                    <div class="ride-type-name">Shared</div>
+                    <span class="ride-type-badge">Subject to availability</span>
+                  </div>
+                  <div class="ride-type-card disabled" data-type="premium" role="radio" aria-checked="false" aria-disabled="true" tabindex="-1">
+                    <div class="ride-type-name">Premium</div>
+                    <span class="ride-type-badge">Coming Soon</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Passenger Information -->
+              <div class="form-group">
+                <label class="form-label" for="passengerName">Your Full Name *</label>
+                <input type="text" id="passengerName" class="form-control" placeholder="e.g. Tariq Khan" required autocomplete="name"/>
+                <div class="field-error" id="nameError">Please enter a valid name (2-60 letters).</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="passengerPhone">Mobile Phone Number *</label>
+                <input type="tel" id="passengerPhone" class="form-control" placeholder="e.g. 0300 1234567 or +92 300 1234567" inputmode="tel" required autocomplete="tel"/>
+                <div class="field-error" id="phoneError">Enter a valid Pakistani mobile number (03XX-XXXXXXX).</div>
+              </div>
+
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <label class="form-label" for="tripNotes">Special Instructions (Optional)</label>
+                  <span id="notesCounter" style="font-size: 0.75rem; color: var(--ink-300);">0/300</span>
+                </div>
+                <textarea id="tripNotes" class="form-control" style="height: 72px; resize: vertical;" maxlength="300" placeholder="Nearby landmark, gate number, or travel notes..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; color: var(--ink-600); cursor: pointer;">
+                  <input type="checkbox" id="consentCheckbox" style="margin-top: 3px;" required/>
+                  <span>I agree to submit this ride request and understand that RideQuetta connects riders with local drivers based on availability.</span>
+                </label>
+                <div class="field-error" id="consentError">You must accept the terms to proceed.</div>
+              </div>
+
+              <button type="submit" class="btn-primary" id="btnSubmitBooking" style="width: 100%; height: 50px; font-size: 1.05rem;">
+                Review Booking Request
+              </button>
+            </form>
+          </div>
+
+          <!-- LIVE FARE ESTIMATE CARD -->
+          <div class="fare-card" id="fareCard">
+            <div class="fare-header">
+              <span class="fare-badge" id="fareDistanceBadge">Route distance</span>
+              <span style="font-size: 0.82rem; color: var(--ink-600);">Quetta Valley Fare</span>
+            </div>
+
+            <div class="fare-price-display">
+              <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em; margin-bottom: 4px;">
+                Estimated Fare
+              </div>
+              <div class="fare-amount">
+                <span class="currency">Rs.</span>
+                <span id="fareValue">100</span>
+              </div>
+              <div id="fareRangeText" style="font-size: 0.82rem; color: var(--ink-600); margin-top: 4px;">
+                Approx. Rs. 90 &ndash; Rs. 110
+              </div>
+            </div>
+
+            <div class="fare-breakdown">
+              <div class="fare-row">
+                <span>Base Departure Rate</span>
+                <span id="breakdownBase">Rs. 70</span>
+              </div>
+              <div class="fare-row">
+                <span>Estimated Distance</span>
+                <span id="breakdownDistance">1.0 km</span>
+              </div>
+              <div class="fare-row">
+                <span>Per-Km Rate</span>
+                <span>Rs. 35 / km</span>
+              </div>
+              <div class="fare-row">
+                <span>Ride Type Multiplier</span>
+                <span id="breakdownMultiplier">1.0x (Standard)</span>
+              </div>
+              <div class="fare-row total-row">
+                <span>Estimated Total</span>
+                <span id="breakdownTotal">Rs. 100</span>
+              </div>
+            </div>
+
+            <div class="fare-disclaimer">
+              <strong>Notice:</strong> Estimated fare only. Final fare may vary after route and service confirmation. Illustrative rates subject to driver agreement.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRACK A REQUEST SECTION -->
+    <section class="track-section">
+      <div class="container">
+        <div class="track-box">
+          <h3 style="font-size: 1.25rem; margin-bottom: 6px;">Track Your Ride Request</h3>
+          <p style="font-size: 0.88rem; color: var(--ink-600);">Have a booking reference? Enter it below to check your submission status.</p>
+          <div class="track-input-row">
+            <input type="text" id="trackInput" class="form-control" placeholder="e.g. RQ-261028-ABC123" style="text-transform: uppercase;"/>
+            <button type="button" class="btn-primary" id="btnTrackStatus">Track</button>
+          </div>
+          <div class="track-result-card" id="trackResultCard"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AREAS WE SERVE ("THE JOURNEY") -->
+    <section class="areas-section" id="areas">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Take 02 &bull; Across the Valley</span>
+          <h2>Popular Locations in Quetta</h2>
+          <p class="section-desc">
+            Explore 12 key hubs and routes across Quetta. Tap "Set as Pickup" to quickly start your booking from any locality.
+          </p>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="areas-viewport">
+          <div class="areas-track" id="areasTrack" role="region" aria-label="Quetta locations carousel">
+            <!-- 12 Cards Generated Dynamically or Rendered Here -->
+            <div class="area-card" data-location="Jinnah Town">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Jinnah Town</h3>
+                <p class="area-desc">Key residential and commercial neighborhood in northwestern Quetta.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Jinnah Town">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Satellite Town">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                    <path d="M2 12h20"></path>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Satellite Town</h3>
+                <p class="area-desc">Major transit hub connecting residential streets with central corridors.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Satellite Town">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Hazara Town">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Hazara Town</h3>
+                <p class="area-desc">Vibrant western neighborhood along Brewery Road and Kirani corridors.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Hazara Town">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Brewery Road">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Brewery Road</h3>
+                <p class="area-desc">Essential western lifeline connecting colleges, hospitals, and markets.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Brewery Road">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Sariab Road">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Sariab Road</h3>
+                <p class="area-desc">Southern arterial artery linking educational institutes and markets.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Sariab Road">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Quetta Cantt">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Quetta Cantt</h3>
+                <p class="area-desc">Central sector with orderly tree-lined avenues and key access points.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Quetta Cantt">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Spinny Road">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Spinny Road</h3>
+                <p class="area-desc">Vital commercial connector bustling with shops and passenger rickshaws.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Spinny Road">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Sariab Phatak">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Sariab Phatak</h3>
+                <p class="area-desc">Historic railway crossing intersection linking south and central Quetta.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Sariab Phatak">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Airport Road">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.8-.2-1.6.1-2 .8-.5.7-.3 1.7.3 2.2l5.5 4.5-3 3-2.5-.5c-.5-.1-1 .1-1.3.5-.4.4-.4 1 0 1.4l2.5 2.5 2.5 2.5c.4.4 1 .4 1.4 0 .4-.3.6-.8.5-1.3l-.5-2.5 3-3 4.5 5.5c.5.6 1.5.8 2.2.3.7-.4 1-1.2.8-2z"></path>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Airport Road</h3>
+                <p class="area-desc">Long northern corridor leading toward the airport and surrounding towns.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Airport Road">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Liaquat Bazaar">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Liaquat Bazaar</h3>
+                <p class="area-desc">The beating heart of city commerce, wholesale markets, and shops.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Liaquat Bazaar">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Kasi Road">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Kasi Road</h3>
+                <p class="area-desc">Active trade route flanked by auto workshops, pharmacies, and food stalls.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Kasi Road">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+
+            <div class="area-card" data-location="Quarry Road">
+              <div>
+                <div class="area-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  </svg>
+                </div>
+                <span class="area-badge">Popular Location</span>
+                <h3 class="area-name">Quarry Road</h3>
+                <p class="area-desc">Historic east-side roadway connecting inner districts to hillside routes.</p>
+              </div>
+              <button type="button" class="btn-set-pickup" data-loc="Quarry Road">
+                Set as Pickup &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS ("THREE TAKES") -->
+    <section class="how-section" id="how">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Take 03 &bull; The Ride Process</span>
+          <h2>A Rickshaw in Three Steps</h2>
+          <p class="section-desc">
+            No complicated apps or street haggling. A clean, transparent booking workflow built for Quetta.
+          </p>
+        </div>
+
+        <div class="steps-container">
+          <!-- Animated Route SVG Line -->
+          <svg class="route-line-svg" viewBox="0 0 800 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <line x1="0" y1="5" x2="800" y2="5" stroke="#16805f" stroke-width="3" stroke-dasharray="8 8" id="animatedRouteLine"/>
+          </svg>
+
+          <!-- Step 1 -->
+          <div class="step-card">
+            <div class="step-clapperboard-number">01</div>
+            <h3 class="step-title">Enter Your Trip</h3>
+            <p class="step-desc">
+              Choose your pickup location and destination. Receive an upfront fare estimate based on Quetta road distances.
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-card">
+            <div class="step-clapperboard-number">02</div>
+            <h3 class="step-title">Submit Your Request</h3>
+            <p class="step-desc">
+              Review your trip summary and passenger contact details, then confirm your request to generate a unique booking reference.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-card">
+            <div class="step-clapperboard-number">03</div>
+            <h3 class="step-title">Confirm Your Ride</h3>
+            <p class="step-desc">
+              Wait for confirmation through the configured booking system before starting your journey across the city.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES SECTION (BENTO GRID - BEHIND THE SCENES) -->
+    <section class="features-section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Take 04 &bull; Behind the Scenes</span>
+          <h2>Designed for Quetta's Streets</h2>
+          <p class="section-desc">
+            We are rethinking local transit with simple, honest technology tailored to how people travel in our city.
+          </p>
+        </div>
+
+        <div class="bento-grid">
+          <div class="bento-card span-2">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h3>Convenient Web-Based Booking</h3>
+            <p class="section-desc" style="margin-top: 8px;">
+              Request rides straight from your mobile or desktop browser without mandatory heavy app downloads. Works quickly even on slower 3G/4G connections.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <h3>Clear Fare Estimates</h3>
+            <p style="font-size: 0.9rem; margin-top: 8px;">
+              Transparent calculations based on city road distances so riders and drivers have aligned expectations before departure.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+              </svg>
+            </div>
+            <h3>Local Quetta Focus</h3>
+            <p style="font-size: 0.9rem; margin-top: 8px;">
+              Built around actual neighborhoods, choke points, and bazaar streets—not a generic map template imported from abroad.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <h3>Booking Transparency</h3>
+            <p style="font-size: 0.9rem; margin-top: 8px;">
+              Track your request with unique cryptographic reference codes. Real status updates without deceptive countdowns.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <h3>Driver Opportunities</h3>
+            <p style="font-size: 0.9rem; margin-top: 8px;">
+              A digital channel for independent rickshaw operators to register interest and connect with structured trip requests.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE MAP SECTION -->
+    <section class="map-section" id="mapSection">
+      <div class="container">
+        <div class="section-header" style="margin-bottom: 28px;">
+          <span class="section-tag">Interactive Route Overview</span>
+          <h2>Quetta Map & Route Preview</h2>
+          <p class="section-desc">
+            Click on the map to set pickup and destination points or drag existing pins.
+          </p>
+        </div>
+
+        <div class="map-wrapper">
+          <div class="map-controls-overlay">
+            <strong>Map Helper:</strong> Click anywhere on the map to set Pickup (green), then click again to set Destination (amber).
+          </div>
+          <div id="map"></div>
+          <div class="map-fallback-notice" id="mapFallback" style="display: none;">
+            <p><strong>Map View Offline:</strong> OpenStreetMap tiles could not be loaded. Your text booking form remains 100% operational.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRIVE WITH US SECTION ("NIGHT SHIFT") -->
+    <section class="drive-section" id="drive">
+      <div class="night-lights-bg" aria-hidden="true"></div>
+      <div class="container" style="position: relative; z-index: 2;">
+        <div class="section-header">
+          <span class="section-tag" style="color: var(--accent-500);">Take 05 &bull; The Night Shift</span>
+          <h2 style="color: #fff;">Drive With RideQuetta</h2>
+          <p class="section-desc" style="color: rgba(255, 255, 255, 0.85);">
+            Are you a rickshaw driver in Quetta? Register your interest to explore direct passenger requests across your preferred routes.
+          </p>
+        </div>
+
+        <div class="drive-grid">
+          <!-- Information Card -->
+          <div class="drive-info-card">
+            <h3 style="font-size: 1.6rem; margin-bottom: 16px;">Why Partner With Us</h3>
+            <p style="color: rgba(255, 255, 255, 0.85); margin-bottom: 24px; line-height: 1.7;">
+              RideQuetta is developing a platform built directly for local drivers. We believe in fair fares, transparent trip details, and respectful collaboration with the city's transport workforce.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="background: rgba(245, 179, 1, 0.2); padding: 8px; border-radius: var(--radius-sm); color: var(--accent-500);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <div>
+                  <h4 style="color: #fff; font-size: 1rem;">Direct Trip Requests</h4>
+                  <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">Receive booking inquiries directly for your preferred areas without roaming empty.</p>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="background: rgba(245, 179, 1, 0.2); padding: 8px; border-radius: var(--radius-sm); color: var(--accent-500);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <div>
+                  <h4 style="color: #fff; font-size: 1rem;">Clear Upfront Rates</h4>
+                  <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">Clear distance calculations reduce negotiation friction with riders.</p>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="background: rgba(245, 179, 1, 0.2); padding: 8px; border-radius: var(--radius-sm); color: var(--accent-500);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <div>
+                  <h4 style="color: #fff; font-size: 1rem;">Local Support</h4>
+                  <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">Our team is locally focused and reachable in Quetta.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Driver Registration Form -->
+          <div class="drive-form-card">
+            <h3>Driver Registration Form</h3>
+            <p style="font-size: 0.85rem; color: var(--ink-600); margin-bottom: 20px;">
+              Submit your details to express interest. We do not require document uploads during initial registration.
+            </p>
+
+            <form id="driverForm" novalidate>
+              <input type="text" name="driver_hp" style="display:none !important;" tabindex="-1" autocomplete="off"/>
+              <input type="hidden" id="driverFormLoadTime" name="driver_load_time"/>
+
+              <div class="form-group">
+                <label class="form-label" for="driverName">Full Name *</label>
+                <input type="text" id="driverName" class="form-control" placeholder="e.g. Muhammad Aslam" required/>
+                <div class="field-error" id="dNameError">Please enter your full name.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="driverPhone">Mobile Phone Number *</label>
+                <input type="tel" id="driverPhone" class="form-control" placeholder="e.g. 0301 2345678" required inputmode="tel"/>
+                <div class="field-error" id="dPhoneError">Please enter a valid Pakistani mobile number.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="driverCNIC">
+                  CNIC Number (Optional)
+                  <small style="color: var(--ink-300); font-weight: normal;">&bull; Only collected for later verification</small>
+                </label>
+                <input type="text" id="driverCNIC" class="form-control" placeholder="XXXXX-XXXXXXX-X" maxlength="15"/>
+                <div class="field-error" id="dCnicError">Please enter a valid 13-digit CNIC (12345-1234567-1).</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="vehicleReg">Vehicle Registration Number *</label>
+                <input type="text" id="vehicleReg" class="form-control" placeholder="e.g. QTA-8921" required/>
+                <div class="field-error" id="dRegError">Please provide your vehicle plate number.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="vehicleType">Vehicle Type *</label>
+                <select id="vehicleType" class="form-control" required>
+                  <option value="Passenger rickshaw">Passenger Rickshaw (Standard 4-stroke / 2-stroke)</option>
+                  <option value="Loader rickshaw">Loader / Cargo Rickshaw</option>
+                  <option value="Other">Other Vehicle</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Service Areas (Select Preferred Localities)</label>
+                <div class="chips-container" id="driverChipsContainer">
+                  <span class="area-chip" data-area="Jinnah Town">Jinnah Town</span>
+                  <span class="area-chip" data-area="Satellite Town">Satellite Town</span>
+                  <span class="area-chip" data-area="Hazara Town">Hazara Town</span>
+                  <span class="area-chip" data-area="Brewery Road">Brewery Road</span>
+                  <span class="area-chip" data-area="Sariab Road">Sariab Road</span>
+                  <span class="area-chip" data-area="Quetta Cantt">Quetta Cantt</span>
+                  <span class="area-chip" data-area="Liaquat Bazaar">Liaquat Bazaar</span>
+                  <span class="area-chip" data-area="Airport Road">Airport Road</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="licenceStatus">Driving Licence Status *</label>
+                <select id="licenceStatus" class="form-control" required>
+                  <option value="Valid">Valid Driving Licence</option>
+                  <option value="Applied">Applied / In Process</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between;">
+                  <label class="form-label" for="driverMessage">Additional Experience or Notes</label>
+                  <span id="driverNotesCounter" style="font-size: 0.75rem; color: var(--ink-300);">0/400</span>
+                </div>
+                <textarea id="driverMessage" class="form-control" style="height: 64px; resize: vertical;" maxlength="400" placeholder="Years of experience, specific routes..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; color: var(--ink-600); cursor: pointer;">
+                  <input type="checkbox" id="driverConsent" style="margin-top: 3px;" required/>
+                  <span>I confirm that the details provided are accurate and agree to be contacted by RideQuetta regarding driver registration.</span>
+                </label>
+                <div class="field-error" id="dConsentError">You must consent to proceed.</div>
+              </div>
+
+              <button type="submit" class="btn-primary" id="btnSubmitDriver" style="width: 100%;">
+                Submit Driver Registration
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHAT RIDEQUETTA AIMS TO IMPROVE (NO FAKE TESTIMONIALS) -->
+    <section class="aims-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Take 06 &bull; Our Mission</span>
+          <h2>What RideQuetta Aims to Improve</h2>
+          <p class="section-desc">
+            As a local startup, we are focused on solving clear everyday transportation challenges in Quetta.
+          </p>
+        </div>
+
+        <div class="aims-grid">
+          <div class="aim-card">
+            <span class="aim-badge">Goal 01 &bull; Transparency</span>
+            <div class="aim-quote">
+              "Clearer fare expectations before starting a journey."
+            </div>
+            <p class="aim-desc">
+              Removing unexpected price surprises through standardized distance-based estimates for Quetta riders.
+            </p>
+          </div>
+
+          <div class="aim-card">
+            <span class="aim-badge">Goal 02 &bull; Convenience</span>
+            <div class="aim-quote">
+              "An easier way to submit a local rickshaw booking request."
+            </div>
+            <p class="aim-desc">
+              Providing digital trip requests that connect passengers in residential neighborhoods with nearby operators.
+            </p>
+          </div>
+
+          <div class="aim-card">
+            <span class="aim-badge">Goal 03 &bull; Opportunity</span>
+            <div class="aim-quote">
+              "An opportunity for local drivers to register their interest."
+            </div>
+            <p class="aim-desc">
+              Empowering independent drivers with access to organized passenger demand across the valley.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ ACCORDION -->
+    <section class="faq-section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Frequently Asked Questions</span>
+          <h2>Common Questions</h2>
+          <p class="section-desc">Everything you need to know about RideQuetta, our booking process, and demo mode.</p>
+        </div>
+
+        <div class="faq-container">
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>How does rickshaw booking work on RideQuetta?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Enter your pickup and destination in the booking form to see an upfront fare estimate. When you submit your request, a unique booking reference code is generated. You will then await confirmation through our system or configured dispatchers before your ride starts.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What does the estimated fare mean?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                The estimate is calculated using road route distance between your chosen Quetta coordinates combined with illustrative base rates (Rs. 70 base + Rs. 35/km). Actual final fares may vary depending on actual traffic conditions, diversions, or route confirmation.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>What is Demo Mode?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Until RideQuetta's production database (Supabase) is connected by the site owner, the site operates in local demo mode. In this mode, booking and driver registration requests are saved safely in your browser's local storage and are not dispatched to real drivers.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>How can drivers register with RideQuetta?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Local rickshaw drivers can complete the "Drive With Us" registration form on this website. Our team reviews applicant details, vehicle plates, and preferred zones before onboarding operators into the booking network.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>How is my personal information handled?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                We collect only the essential details required to coordinate your ride: your name, phone number, and pickup/destination points. We do not sell or share passenger data with third-party advertisers.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOBILE APP SECTION ("RIDEQUETTA IS STARTING HERE") -->
+    <section class="app-section">
+      <div class="container">
+        <div class="app-card">
+          <span class="section-tag">Coming Soon</span>
+          <h2>RideQuetta Is Starting Here</h2>
+          <p class="section-desc">
+            We're building a simpler way to request rickshaw rides in Quetta. Explore the website while we work toward future improvements.
+          </p>
+
+          <div class="app-badge-buttons">
+            <button type="button" class="btn-app-coming-soon" id="btnAppIos">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.66-.82 1.11-1.96.99-3.1-.96.04-2.12.64-2.8 1.44-.59.69-1.12 1.83-.98 2.94 1.08.08 2.18-.54 2.79-1.28z"/>
+              </svg>
+              <div class="app-btn-text">
+                <small>iOS App</small>
+                <strong>Coming Soon</strong>
+              </div>
+            </button>
+
+            <button type="button" class="btn-app-coming-soon" id="btnAppAndroid">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0223 3.503C15.5902 8.4118 13.8533 8.125 12 8.125c-1.8533 0-3.5902.2868-5.1368.8247L4.8409 5.4467a.4161.4161 0 0 0-.5677-.1521.4157.4157 0 0 0-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+              </svg>
+              <div class="app-btn-text">
+                <small>Android App</small>
+                <strong>Coming Soon</strong>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section class="contact-section" id="contact">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Get in Touch</span>
+          <h2>Contact RideQuetta</h2>
+          <p class="section-desc">
+            Have questions, feedback, or commercial inquiries? Reach out to our team in Quetta.
+          </p>
+        </div>
+
+        <div class="contact-grid">
+          <!-- Contact Details / Fallback -->
+          <div class="contact-card" id="contactDetailsCard">
+            <!-- Populated via script based on CONFIG.contact -->
+          </div>
+
+          <!-- Contact Form -->
+          <div class="contact-card">
+            <h3 style="margin-bottom: 12px; font-size: 1.3rem;">Send a Message</h3>
+            <form id="contactForm" novalidate>
+              <div class="form-group">
+                <label class="form-label" for="cName">Your Name *</label>
+                <input type="text" id="cName" class="form-control" placeholder="e.g. Bilal Ahmed" required/>
+                <div class="field-error" id="cNameError">Please enter your name.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cContact">Phone or Email *</label>
+                <input type="text" id="cContact" class="form-control" placeholder="e.g. 0300 1234567 or email@domain.com" required/>
+                <div class="field-error" id="cContactError">Please enter your contact information.</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cMessage">Message *</label>
+                <textarea id="cMessage" class="form-control" style="height: 100px; resize: vertical;" placeholder="Your questions, partnership inquiry, or suggestions..." required></textarea>
+                <div class="field-error" id="cMessageError">Please enter a message.</div>
+              </div>
+
+              <button type="submit" class="btn-primary" id="btnSubmitContact" style="width: 100%;">
+                Send Inquiry
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INFINITE MARQUEE OF QUETTA AREAS -->
+    <div class="marquee-wrapper" aria-hidden="true">
+      <div class="marquee-content">
+        <span class="marquee-item">Jinnah Town <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Satellite Town <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Hazara Town <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Brewery Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Sariab Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Quetta Cantt <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Spinny Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Sariab Phatak <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Airport Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Liaquat Bazaar <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Kasi Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Quarry Road <span class="marquee-dot"></span></span>
+      </div>
+      <div class="marquee-content" aria-hidden="true">
+        <span class="marquee-item">Jinnah Town <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Satellite Town <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Hazara Town <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Brewery Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Sariab Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Quetta Cantt <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Spinny Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Sariab Phatak <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Airport Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Liaquat Bazaar <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Kasi Road <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Quarry Road <span class="marquee-dot"></span></span>
+      </div>
+    </div>
+  </main>
+
+  <!-- CLOSING CREDITS FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="brand-logo" style="margin-bottom: 16px;">
+            <div class="logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 17h16M7 17l1.5-6h7L17 17M6 11l2-5h8l2 5" stroke="#f5b301"/>
+                <circle cx="7" cy="18" r="2" fill="#fff"/>
+                <circle cx="17" cy="18" r="2" fill="#fff"/>
+              </svg>
+            </div>
+            <span class="logo-text" style="color: #fff;">Ride<span style="color: var(--accent-500)">Quetta</span></span>
+          </div>
+          <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.6; max-width: 320px;">
+            A local rickshaw booking startup built for Quetta, Pakistan. Clear upfront fare estimates, convenient booking requests, and driver opportunities.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="#top">Home</a></li>
+            <li><a href="#book">Book a Ride</a></li>
+            <li><a href="#areas">Areas We Serve</a></li>
+            <li><a href="#how">How It Works</a></li>
+            <li><a href="#drive">Drive With Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Popular Areas</h4>
+          <ul>
+            <li><a href="#book" class="footer-area-link" data-loc="Jinnah Town">Jinnah Town</a></li>
+            <li><a href="#book" class="footer-area-link" data-loc="Brewery Road">Brewery Road</a></li>
+            <li><a href="#book" class="footer-area-link" data-loc="Sariab Road">Sariab Road</a></li>
+            <li><a href="#book" class="footer-area-link" data-loc="Liaquat Bazaar">Liaquat Bazaar</a></li>
+            <li><a href="#book" class="footer-area-link" data-loc="Quetta Cantt">Quetta Cantt</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Information</h4>
+          <ul>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#" id="linkAboutModal">About RideQuetta</a></li>
+            <li><a href="#" id="linkPrivacyModal">Privacy Policy</a></li>
+            <li><a href="#" id="linkTermsModal">Terms of Service</a></li>
+            <li><a href="#contact">Contact Support</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; 2026 RideQuetta. Built for Quetta, Pakistan.
+        </div>
+        <div>
+          <button type="button" class="btn-back-to-start" id="btnBackToStart">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+            Back to start
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODALS -->
+
+  <!-- BOOKING REVIEW MODAL -->
+  <div class="modal-overlay" id="reviewModal" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="reviewModalTitle">Review Your Trip Details</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseReview" aria-label="Close review">&times;</button>
+      </div>
+      <div style="font-size: 0.95rem; margin-bottom: 24px;" id="reviewDetails">
+        <!-- Injected via JS -->
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" id="btnEditBooking">Edit Details</button>
+        <button type="button" class="btn-primary" id="btnConfirmBooking">Confirm Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING SUCCESS MODAL -->
+  <div class="modal-overlay" id="bookingSuccessModal" role="dialog" aria-modal="true" aria-labelledby="successModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="successModalTitle" style="color: var(--brand-600); display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Request Submitted
+        </h3>
+        <button type="button" class="modal-close-btn" id="btnCloseSuccess" aria-label="Close modal">&times;</button>
+      </div>
+      <div id="bookingSuccessBody" style="font-size: 0.95rem; margin-bottom: 24px;">
+        <!-- Injected via JS -->
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn-primary" id="btnCopyReference">Copy Booking Reference</button>
+        <div id="whatsappShareContainer"></div>
+        <button type="button" class="btn-secondary" id="btnDoneBooking">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER SUCCESS MODAL -->
+  <div class="modal-overlay" id="driverSuccessModal" role="dialog" aria-modal="true" aria-labelledby="driverSuccessTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="driverSuccessTitle" style="color: var(--brand-600);">Registration Received</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseDriverSuccess" aria-label="Close modal">&times;</button>
+      </div>
+      <div id="driverSuccessBody" style="font-size: 0.95rem; margin-bottom: 24px;"></div>
+      <button type="button" class="btn-primary" id="btnDoneDriver" style="width: 100%;">Understood</button>
+    </div>
+  </div>
+
+  <!-- APP INFO MODAL -->
+  <div class="modal-overlay" id="appInfoModal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="appModalTitle">Mobile Apps In Development</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseAppModal" aria-label="Close modal">&times;</button>
+      </div>
+      <p style="font-size: 0.95rem; color: var(--ink-600); line-height: 1.6; margin-bottom: 16px;">
+        Native Android and iOS mobile applications for RideQuetta are currently under active development.
+      </p>
+      <p style="font-size: 0.95rem; color: var(--ink-600); line-height: 1.6; margin-bottom: 20px;">
+        In the meantime, this responsive website is fully optimized for mobile devices—you can add it to your home screen or bookmark it in your phone browser for instant access across Quetta.
+      </p>
+      <button type="button" class="btn-primary" id="btnDoneAppModal" style="width: 100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- GENERIC LEGAL / ABOUT MODAL -->
+  <div class="modal-overlay" id="legalModal" role="dialog" aria-modal="true" aria-labelledby="legalModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="legalModalTitle">Information</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseLegalModal" aria-label="Close modal">&times;</button>
+      </div>
+      <div id="legalModalBody" style="font-size: 0.92rem; color: var(--ink-600); line-height: 1.65; margin-bottom: 20px;">
+        <!-- Injected via JS -->
+      </div>
+      <button type="button" class="btn-secondary" id="btnDoneLegalModal" style="width: 100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+
+  <!-- Leaflet JS CDN (Deferred with graceful fallback) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+
+  <!-- Supabase JS CDN (Optional, only invoked if configured) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+  <script>
+
+  /* ==========================================================================
+     RIDEQUETTA CONFIGURATION & DATA (EDIT HERE)
+     ========================================================================== */
+  const CONFIG = {
+    // Pricing engine parameters (Illustrative rates: replace with owner's confirmed rates)
+    pricing: {
+      baseFare: 70,           // Base departure rate (PKR)
+      perKm: 35,              // Rate per kilometer (PKR)
+      minFare: 100,           // Minimum trip fare (PKR)
+      rideTypeMultiplier: {
+        standard: 1.0,        // Dedicated rickshaw
+        shared: 0.75,         // Shared ride (subject to route matching)
+        premium: 1.4          // Reserved for future premium cabin rickshaws
+      },
+      waitingPerMinute: 0     // Waiting charge if applicable
+    },
+
+    // Contact channels. Empty values will automatically render clean "Coming Soon" notices.
+    contact: {
+      phone: '',              // e.g. "+92 81 2800000"
+      whatsapp: '',           // e.g. "923001234567" (digits only for wa.me link)
+      email: 'contact@ridequetta.local',
+      address: 'Quetta, Balochistan, Pakistan',
+      socials: {
+        facebook: '',
+        instagram: '',
+        twitter: ''
+      }
+    },
+
+    // Service toggles
+    services: {
+      premiumEnabled: false
+    },
+
+    // Supabase Backend Integration (Leave blank to use built-in local Demo Mode)
+    backend: {
+      provider: 'supabase',
+      supabaseUrl: '',        // e.g. 'https://your-project.supabase.co'
+      supabaseAnonKey: ''     // e.g. 'eyJhbGciOi...' (public anon key only)
+    }
+  };
+
+  /* Quetta Verified Locations & Approximate Coordinates */
+  const LOCATIONS = [
+    { name: "Jinnah Town", type: "Neighbourhood", lat: 30.2150, lng: 67.0000 },
+    { name: "Satellite Town", type: "Neighbourhood", lat: 30.2200, lng: 66.9950 },
+    { name: "Hazara Town", type: "Neighbourhood", lat: 30.1450, lng: 66.9750 },
+    { name: "Brewery Road", type: "Road", lat: 30.1650, lng: 67.0200 },
+    { name: "Sariab Road", type: "Road", lat: 30.1750, lng: 67.0150 },
+    { name: "Quetta Cantt", type: "Area", lat: 30.2000, lng: 66.9500 },
+    { name: "Spinny Road", type: "Road", lat: 30.1900, lng: 67.0000 },
+    { name: "Sariab Phatak", type: "Landmark", lat: 30.1650, lng: 67.0100 },
+    { name: "Airport Road", type: "Road", lat: 30.2400, lng: 66.9400 },
+    { name: "Liaquat Bazaar", type: "Market", lat: 30.1930, lng: 67.0090 },
+    { name: "Kasi Road", type: "Road", lat: 30.1900, lng: 67.0250 },
+    { name: "Quarry Road", type: "Road", lat: 30.1850, lng: 67.0050 },
+    { name: "Jinnah Road", type: "Road", lat: 30.1950, lng: 67.0080 },
+    { name: "Alamdar Road", type: "Road", lat: 30.2100, lng: 66.9980 },
+    { name: "Samungli Road", type: "Road", lat: 30.2300, lng: 66.9200 },
+    { name: "University of Balochistan", type: "Institution", lat: 30.2650, lng: 66.9800 },
+    { name: "BUITEMS", type: "Institution", lat: 30.2650, lng: 66.9500 },
+    { name: "Civil Hospital Quetta", type: "Hospital", lat: 30.1880, lng: 67.0140 },
+    { name: "Quetta Railway Station", type: "Station", lat: 30.1860, lng: 67.0160 },
+    { name: "Quetta International Airport", type: "Airport", lat: 30.2514, lng: 66.9378 }
+  ];
+
+  const MAP_DEFAULT_CENTER = [30.1798, 66.9750];
+  const MAP_DEFAULT_ZOOM = 12;
+
+  /* ==========================================================================
+     UTILITIES & HELPERS
+     ========================================================================== */
+
+  // Cryptographically secure reference generator
+  function generateReference(prefix) {
+    const date = new Date();
+    const yy = String(date.getFullYear()).slice(-2);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // Unambiguous chars
+    const randomBytes = new Uint8Array(6);
+    window.crypto.getRandomValues(randomBytes);
+    let randStr = '';
+    for (let i = 0; i < 6; i++) {
+      randStr += alphabet[randomBytes[i] % alphabet.length];
+    }
+    return `${prefix}-${yy}${mm}${dd}-${randStr}`;
+  }
+
+  // Haversine distance formula (in km)
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // Pakistani mobile phone validator & normalizer
+  function validatePakistaniPhone(phone) {
+    const clean = phone.replace(/[^0-9+]/g, '');
+    const regex = /^(?:\+92|92|0)?(3[0-9]{9})$/;
+    const match = clean.match(regex);
+    if (!match) return { valid: false };
+    const normalized = `+92 ${match[1].slice(0, 3)} ${match[1].slice(3)}`;
+    return { valid: true, normalized: normalized, digitsOnly: `92${match[1]}` };
+  }
+
+  // Toast notification system
+  function showToast(message, duration = 4000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.setAttribute('role', 'alert');
+
+    const icon = document.createElement('span');
+    icon.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    toast.appendChild(icon);
+
+    const text = document.createElement('span');
+    text.textContent = message;
+    toast.appendChild(text);
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    let timer = setTimeout(dismiss, duration);
+    function dismiss() {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 350);
+    }
+    toast.addEventListener('mouseenter', () => clearTimeout(timer));
+    toast.addEventListener('mouseleave', () => timer = setTimeout(dismiss, 1500));
+  }
+
+  /* ==========================================================================
+     BACKEND ADAPTER LAYER (SUPABASE + LOCAL DEMO MODE)
+     ========================================================================== */
+  const Backend = {
+    isConfigured() {
+      return Boolean(CONFIG.backend.supabaseUrl && CONFIG.backend.supabaseAnonKey);
+    },
+
+    async createBooking(payload) {
+      if (this.isConfigured()) {
+        try {
+          const res = await fetch(`${CONFIG.backend.supabaseUrl}/rest/v1/bookings`, {
+            method: 'POST',
+            headers: {
+              'apikey': CONFIG.backend.supabaseAnonKey,
+              'Authorization': `Bearer ${CONFIG.backend.supabaseAnonKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(`Network response error: ${res.status}`);
+          return await res.json();
+        } catch (err) {
+          console.warn('Backend request failed, falling back to local demo storage', err);
+        }
+      }
+      // Demo Mode Fallback
+      const records = JSON.parse(localStorage.getItem('ridequetta_bookings') || '[]');
+      records.unshift(payload);
+      localStorage.setItem('ridequetta_bookings', JSON.stringify(records));
+      return { ...payload, isDemo: true };
+    },
+
+    async getBookingStatus(reference) {
+      if (this.isConfigured()) {
+        try {
+          const res = await fetch(`${CONFIG.backend.supabaseUrl}/rest/v1/rpc/get_booking_status`, {
+            method: 'POST',
+            headers: {
+              'apikey': CONFIG.backend.supabaseAnonKey,
+              'Authorization': `Bearer ${CONFIG.backend.supabaseAnonKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ref: reference })
+          });
+          if (res.ok) return await res.json();
+        } catch (err) {
+          console.warn('Backend status check failed', err);
+        }
+      }
+      // Demo lookup
+      const records = JSON.parse(localStorage.getItem('ridequetta_bookings') || '[]');
+      const match = records.find(r => r.reference.toUpperCase() === reference.toUpperCase());
+      if (match) {
+        return {
+          reference: match.reference,
+          status: match.status,
+          pickup: match.pickup,
+          destination: match.destination,
+          created_at: match.created_at,
+          isDemo: true
+        };
+      }
+      return null;
+    },
+
+    async createDriverRegistration(payload) {
+      if (this.isConfigured()) {
+        try {
+          const res = await fetch(`${CONFIG.backend.supabaseUrl}/rest/v1/driver_registrations`, {
+            method: 'POST',
+            headers: {
+              'apikey': CONFIG.backend.supabaseAnonKey,
+              'Authorization': `Bearer ${CONFIG.backend.supabaseAnonKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) return await res.json();
+        } catch (err) {
+          console.warn('Backend driver submission failed', err);
+        }
+      }
+      // Demo save
+      const records = JSON.parse(localStorage.getItem('ridequetta_drivers') || '[]');
+      records.unshift(payload);
+      localStorage.setItem('ridequetta_drivers', JSON.stringify(records));
+      return { ...payload, isDemo: true };
+    },
+
+    async createContactMessage(payload) {
+      if (this.isConfigured()) {
+        try {
+          await fetch(`${CONFIG.backend.supabaseUrl}/rest/v1/contact_messages`, {
+            method: 'POST',
+            headers: {
+              'apikey': CONFIG.backend.supabaseAnonKey,
+              'Authorization': `Bearer ${CONFIG.backend.supabaseAnonKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          console.warn('Contact message failed', e);
+        }
+      }
+      const records = JSON.parse(localStorage.getItem('ridequetta_contact') || '[]');
+      records.unshift(payload);
+      localStorage.setItem('ridequetta_contact', JSON.stringify(records));
+      return { success: true };
+    }
+  };
+
+  /* ==========================================================================
+     CINEMATIC SCROLL ENGINE & AUDIO
+     ========================================================================== */
+  const CinemaEngine = {
+    scrollCurrent: 0,
+    scrollTarget: 0,
+    rafId: null,
+    audioCtx: null,
+    audioGain: null,
+    isAudioPlaying: false,
+
+    init() {
+      // Check reduced motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        this.hidePreloaderImmediately();
+        return;
+      }
+
+      // Check session preloader
+      if (sessionStorage.getItem('rq_preloader_played') === 'true') {
+        this.hidePreloaderImmediately();
+      } else {
+        this.initPreloader();
+      }
+
+      this.initParallax();
+      this.initAudio();
+      this.initBentoSpotlight();
+      this.initCursor();
+    },
+
+    initPreloader() {
+      const preloader = document.getElementById('preloader');
+      const skipBtn = document.getElementById('btnSkipIntro');
+      if (!preloader) return;
+
+      let dismissed = false;
+      const dismiss = () => {
+        if (dismissed) return;
+        dismissed = true;
+        preloader.classList.add('fade-out');
+        sessionStorage.setItem('rq_preloader_played', 'true');
+        setTimeout(() => {
+          preloader.style.display = 'none';
+        }, 500);
+      };
+
+      if (skipBtn) {
+        skipBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          dismiss();
+        });
+      }
+      // Auto-close after exactly 3.0 seconds
+      setTimeout(dismiss, 3000);
+    },
+
+    hidePreloaderImmediately() {
+      const preloader = document.getElementById('preloader');
+      if (preloader) {
+        preloader.style.display = 'none';
+      }
+    },
+
+    initParallax() {
+      const hero = document.getElementById('top');
+      const mountain = document.querySelector('.layer-chiltan-mountains');
+      const skyline = document.querySelector('.layer-city-skyline');
+      let mouseX = 0, mouseY = 0;
+
+      // Mouse parallax (desktop only)
+      if (window.matchMedia('(pointer: fine)').matches) {
+        window.addEventListener('mousemove', (e) => {
+          mouseX = (e.clientX / window.innerWidth - 0.5) * 16;
+          mouseY = (e.clientY / window.innerHeight - 0.5) * 8;
+        }, { passive: true });
+      }
+
+      const loop = () => {
+        const scrollY = window.scrollY;
+        // Interpolate sky colors based on scroll
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = Math.min(1, Math.max(0, scrollY / (maxScroll || 1)));
+
+        // Color grade over scroll: Dawn -> Midday -> Golden -> Night
+        let skyTop = '#152536';
+        let skyBottom = '#e59062';
+        if (progress > 0.6) {
+          skyTop = '#0a1714';
+          skyBottom = '#13352b';
+        } else if (progress > 0.25) {
+          skyTop = '#1a3c40';
+          skyBottom = '#d97706';
+        }
+        document.documentElement.style.setProperty('--sky-top', skyTop);
+        document.documentElement.style.setProperty('--sky-bottom', skyBottom);
+
+        if (mountain && skyline && scrollY < window.innerHeight) {
+          const mY = scrollY * 0.25 + mouseY * 0.4;
+          const sY = scrollY * 0.45 + mouseY * 0.7;
+          mountain.style.transform = `translate3d(${mouseX * 0.3}px, ${mY}px, 0)`;
+          skyline.style.transform = `translate3d(${mouseX * 0.6}px, ${sY}px, 0)`;
+        }
+
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    },
+
+    initBentoSpotlight() {
+      const cards = document.querySelectorAll('.bento-card');
+      cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          card.style.setProperty('--mx', `${x}px`);
+          card.style.setProperty('--my', `${y}px`);
+        });
+      });
+    },
+
+    initCursor() {
+      const cursor = document.getElementById('cursor');
+      if (!cursor || !window.matchMedia('(pointer: fine)').matches) return;
+
+      let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+      let tx = cx, ty = cy;
+
+      window.addEventListener('mousemove', (e) => {
+        tx = e.clientX;
+        ty = e.clientY;
+      }, { passive: true });
+
+      const updateCursor = () => {
+        cx += (tx - cx) * 0.2;
+        cy += (ty - cy) * 0.2;
+        cursor.style.transform = `translate(${cx}px, ${cy}px)`;
+        requestAnimationFrame(updateCursor);
+      };
+      requestAnimationFrame(updateCursor);
+
+      // Magnetic & Hover expansion
+      const interactives = document.querySelectorAll('button, a, .ride-type-card, .area-card');
+      interactives.forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+      });
+    },
+
+    initAudio() {
+      const btn = document.getElementById('btnAudioToggle');
+      if (!btn) return;
+
+      btn.addEventListener('click', () => {
+        if (!this.audioCtx) {
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.audioCtx = new AudioContext();
+            
+            // Synthesize subtle rickshaw engine hum (warm low oscillators)
+            const osc1 = this.audioCtx.createOscillator();
+            const osc2 = this.audioCtx.createOscillator();
+            const filter = this.audioCtx.createBiquadFilter();
+
+            this.audioGain = this.audioCtx.createGain();
+            this.audioGain.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
+
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(48, this.audioCtx.currentTime); // Low engine rumble
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(96, this.audioCtx.currentTime);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(260, this.audioCtx.currentTime);
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            filter.connect(this.audioGain);
+            this.audioGain.connect(this.audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            this.isAudioPlaying = true;
+            btn.classList.add('active');
+            btn.setAttribute('aria-label', 'Mute city audio');
+            showToast('Ambient rickshaw sound enabled');
+          } catch (e) {
+            console.warn('WebAudio not supported');
+          }
+        } else {
+          if (this.isAudioPlaying) {
+            this.audioGain.gain.setTargetAtTime(0, this.audioCtx.currentTime, 0.1);
+            this.isAudioPlaying = false;
+            btn.classList.remove('active');
+            btn.setAttribute('aria-label', 'Unmute ambient sound');
+          } else {
+            this.audioGain.gain.setTargetAtTime(0.04, this.audioCtx.currentTime, 0.1);
+            this.isAudioPlaying = true;
+            btn.classList.add('active');
+            btn.setAttribute('aria-label', 'Mute ambient sound');
+          }
+        }
+      });
+    }
+  };
+
+  /* ==========================================================================
+     BOOKING ENGINE: AUTOCOMPLETE, FARES & SUBMISSION
+     ========================================================================== */
+  const BookingModule = {
+    selectedPickupCoords: null,
+    selectedDestCoords: null,
+    selectedRideType: 'standard',
+    currentEstimatedFare: 100,
+    currentDistanceKm: 1.0,
+    isDistanceRouteCalculated: false,
+    osrmAbortController: null,
+    pendingBookingPayload: null,
+
+    init() {
+      // Set timestamp for anti-spam
+      const loadTime = document.getElementById('formLoadTime');
+      if (loadTime) loadTime.value = Date.now().toString();
+
+      this.setupAutocomplete('pickupInput', 'pickupDropdown', (loc) => {
+        this.selectedPickupCoords = loc ? { lat: loc.lat, lng: loc.lng } : null;
+        this.calculateFare();
+        MapModule.updateMarkers();
+      });
+
+      this.setupAutocomplete('destInput', 'destDropdown', (loc) => {
+        this.selectedDestCoords = loc ? { lat: loc.lat, lng: loc.lng } : null;
+        this.calculateFare();
+        MapModule.updateMarkers();
+      });
+
+      // Swap button
+      const swapBtn = document.getElementById('btnSwapLocations');
+      if (swapBtn) {
+        swapBtn.addEventListener('click', () => {
+          const pInput = document.getElementById('pickupInput');
+          const dInput = document.getElementById('destInput');
+          const tempVal = pInput.value;
+          pInput.value = dInput.value;
+          dInput.value = tempVal;
+
+          const tempCoords = this.selectedPickupCoords;
+          this.selectedPickupCoords = this.selectedDestCoords;
+          this.selectedDestCoords = tempCoords;
+
+          this.calculateFare();
+          MapModule.updateMarkers();
+        });
+      }
+
+      // Ride type selector cards
+      const typeCards = document.querySelectorAll('.ride-type-card');
+      typeCards.forEach(card => {
+        card.addEventListener('click', () => {
+          if (card.classList.contains('disabled')) return;
+          typeCards.forEach(c => {
+            c.classList.remove('selected');
+            c.setAttribute('aria-checked', 'false');
+          });
+          card.classList.add('selected');
+          card.setAttribute('aria-checked', 'true');
+          this.selectedRideType = card.dataset.type;
+          this.calculateFare();
+        });
+      });
+
+      // Special notes counter
+      const notesInput = document.getElementById('tripNotes');
+      const counter = document.getElementById('notesCounter');
+      if (notesInput && counter) {
+        notesInput.addEventListener('input', () => {
+          counter.textContent = `${notesInput.value.length}/300`;
+        });
+      }
+
+      // Areas cards "Set as Pickup"
+      const setPickupBtns = document.querySelectorAll('.btn-set-pickup');
+      setPickupBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const locName = btn.dataset.loc;
+          const pInput = document.getElementById('pickupInput');
+          if (pInput) {
+            pInput.value = locName;
+            const found = LOCATIONS.find(l => l.name.toLowerCase() === locName.toLowerCase());
+            this.selectedPickupCoords = found ? { lat: found.lat, lng: found.lng } : null;
+            pInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            pInput.focus();
+            showToast(`Pickup set to ${locName}`);
+            this.calculateFare();
+            MapModule.updateMarkers();
+          }
+        });
+      });
+
+      // Form validation & submission
+      const form = document.getElementById('bookingForm');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.handleFormSubmit();
+        });
+      }
+
+      // Review modal confirmation
+      const confirmBtn = document.getElementById('btnConfirmBooking');
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => this.executeBookingConfirmation());
+      }
+
+      const editBtn = document.getElementById('btnEditBooking');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          Modals.close('reviewModal');
+          document.getElementById('pickupInput')?.focus();
+        });
+      }
+
+      // Map pin helper button
+      const useMapBtn = document.getElementById('btnUseMap');
+      if (useMapBtn) {
+        useMapBtn.addEventListener('click', () => {
+          document.getElementById('mapSection')?.scrollIntoView({ behavior: 'smooth' });
+          showToast('Click on the map to place pickup and destination pins');
+        });
+      }
+    },
+
+    setupAutocomplete(inputId, dropdownId, onSelect) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      if (!input || !dropdown) return;
+
+      let focusedIndex = -1;
+
+      const renderMatches = (matches) => {
+        dropdown.innerHTML = '';
+        if (matches.length === 0) {
+          dropdown.classList.remove('open');
+          input.setAttribute('aria-expanded', 'false');
+          return;
+        }
+
+        matches.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.className = 'combobox-item';
+          div.role = 'option';
+          div.setAttribute('id', `${dropdownId}-opt-${idx}`);
+          div.innerHTML = `<span>${item.name}</span><span class="item-type">${item.type}</span>`;
+          div.addEventListener('click', () => {
+            input.value = item.name;
+            dropdown.classList.remove('open');
+            input.setAttribute('aria-expanded', 'false');
+            onSelect(item);
+          });
+          dropdown.appendChild(div);
+        });
+
+        dropdown.classList.add('open');
+        input.setAttribute('aria-expanded', 'true');
+        focusedIndex = -1;
+      };
+
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLowerCase();
+        if (!query) {
+          dropdown.classList.remove('open');
+          input.setAttribute('aria-expanded', 'false');
+          onSelect(null);
+          return;
+        }
+        const matches = LOCATIONS.filter(l => l.name.toLowerCase().includes(query));
+        renderMatches(matches);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.combobox-item');
+        if (!dropdown.classList.contains('open') || items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          focusedIndex = (focusedIndex + 1) % items.length;
+          items.forEach((item, i) => item.classList.toggle('focused', i === focusedIndex));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          focusedIndex = (focusedIndex - 1 + items.length) % items.length;
+          items.forEach((item, i) => item.classList.toggle('focused', i === focusedIndex));
+        } else if (e.key === 'Enter') {
+          if (focusedIndex >= 0 && items[focusedIndex]) {
+            e.preventDefault();
+            items[focusedIndex].click();
+          }
+        } else if (e.key === 'Escape') {
+          dropdown.classList.remove('open');
+          input.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.remove('open');
+          input.setAttribute('aria-expanded', 'false');
+        }
+      });
+    },
+
+    async calculateFare() {
+      const pInput = document.getElementById('pickupInput');
+      const dInput = document.getElementById('destInput');
+      const badge = document.getElementById('fareDistanceBadge');
+      const pVal = pInput?.value.trim();
+      const dVal = dInput?.value.trim();
+
+      if (!pVal || !dVal) {
+        this.updateFareDisplay(CONFIG.pricing.minFare, 0, false, "Minimum fare");
+        return;
+      }
+
+      // Check if coordinates exist
+      const pLoc = this.selectedPickupCoords || LOCATIONS.find(l => l.name.toLowerCase() === pVal.toLowerCase());
+      const dLoc = this.selectedDestCoords || LOCATIONS.find(l => l.name.toLowerCase() === dVal.toLowerCase());
+
+      if (!pLoc || !dLoc) {
+        // Free text without coordinates -> display minimum fare with note
+        this.updateFareDisplay(CONFIG.pricing.minFare, 0, false, "Distance unavailable");
+        return;
+      }
+
+      // Abort stale OSRM request if any
+      if (this.osrmAbortController) {
+        this.osrmAbortController.abort();
+      }
+      this.osrmAbortController = new AbortController();
+
+      // Show temporary loading state
+      if (badge) badge.textContent = "Calculating route...";
+
+      let distanceKm = 0;
+      let isRoadRoute = false;
+
+      try {
+        const timeoutId = setTimeout(() => this.osrmAbortController.abort(), 5000);
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${pLoc.lng},${pLoc.lat};${dLoc.lng},${dLoc.lat}?overview=full&geometries=geojson`;
+        const res = await fetch(osrmUrl, { signal: this.osrmAbortController.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.routes && data.routes[0]) {
+            distanceKm = data.routes[0].distance / 1000;
+            isRoadRoute = true;
+            MapModule.drawRoutePolyline(data.routes[0].geometry.coordinates);
+          }
+        }
+      } catch (err) {
+        // Fallback to Haversine * 1.35 road winding factor
+        console.info('OSRM router unavailable, using Haversine approximation', err);
+      }
+
+      if (!isRoadRoute) {
+        const straight = haversineDistance(pLoc.lat, pLoc.lng, dLoc.lat, dLoc.lng);
+        distanceKm = Math.max(1, straight * 1.35); // 1.35 factor for winding roads in Quetta
+        MapModule.drawSimpleLine(pLoc, dLoc);
+      }
+
+      const multiplier = CONFIG.pricing.rideTypeMultiplier[this.selectedRideType] || 1.0;
+      const rawFare = (CONFIG.pricing.baseFare + (distanceKm * CONFIG.pricing.perKm)) * multiplier;
+      const finalFare = Math.max(CONFIG.pricing.minFare, Math.round(rawFare / 10) * 10);
+
+      this.currentDistanceKm = distanceKm;
+      this.currentEstimatedFare = finalFare;
+      this.isDistanceRouteCalculated = isRoadRoute;
+
+      this.updateFareDisplay(finalFare, distanceKm, isRoadRoute, isRoadRoute ? "Route distance" : "Approximate distance");
+    },
+
+    updateFareDisplay(fare, distKm, isRoad, badgeLabel) {
+      const fareEl = document.getElementById('fareValue');
+      const distBadge = document.getElementById('fareDistanceBadge');
+      const rangeEl = document.getElementById('fareRangeText');
+      const breakdownBase = document.getElementById('breakdownBase');
+      const breakdownDist = document.getElementById('breakdownDistance');
+      const breakdownMult = document.getElementById('breakdownMultiplier');
+      const breakdownTotal = document.getElementById('breakdownTotal');
+
+      if (distBadge) distBadge.textContent = badgeLabel;
+
+      // Animate fare value tween
+      if (fareEl) {
+        const start = parseInt(fareEl.textContent, 10) || fare;
+        const diff = fare - start;
+        const duration = 400;
+        const startTime = performance.now();
+
+        const step = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          const current = Math.round(start + diff * progress);
+          fareEl.textContent = current.toString();
+          if (progress < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+
+      if (rangeEl) {
+        const low = Math.max(CONFIG.pricing.minFare, Math.round((fare * 0.9) / 10) * 10);
+        const high = Math.round((fare * 1.1) / 10) * 10;
+        rangeEl.textContent = `Approx. Rs. ${low} – Rs. ${high}`;
+      }
+
+      if (breakdownBase) breakdownBase.textContent = `Rs. ${CONFIG.pricing.baseFare}`;
+      if (breakdownDist) breakdownDist.textContent = distKm > 0 ? `${distKm.toFixed(1)} km` : '—';
+      if (breakdownMult) breakdownMult.textContent = `${(CONFIG.pricing.rideTypeMultiplier[this.selectedRideType] || 1).toFixed(1)}x (${this.selectedRideType})`;
+      if (breakdownTotal) breakdownTotal.textContent = `Rs. ${fare}`;
+    },
+
+    handleFormSubmit() {
+      let isValid = true;
+
+      // Honeypot check
+      const hp = document.querySelector('input[name="hp_field"]')?.value;
+      if (hp) {
+        console.warn('Bot detected via honeypot.');
+        return;
+      }
+
+      // Minimum time check (3 seconds)
+      const loadTime = parseInt(document.getElementById('formLoadTime')?.value || '0', 10);
+      if (Date.now() - loadTime < 2500) {
+        showToast('Please take a moment to review your booking details.');
+        return;
+      }
+
+      const pInput = document.getElementById('pickupInput');
+      const dInput = document.getElementById('destInput');
+      const nameInput = document.getElementById('passengerName');
+      const phoneInput = document.getElementById('passengerPhone');
+      const consentInput = document.getElementById('consentCheckbox');
+
+      const pErr = document.getElementById('pickupError');
+      const dErr = document.getElementById('destError');
+      const nErr = document.getElementById('nameError');
+      const phErr = document.getElementById('phoneError');
+      const cErr = document.getElementById('consentError');
+
+      // Reset errors
+      [pInput, dInput, nameInput, phoneInput].forEach(el => el.setAttribute('aria-invalid', 'false'));
+      [pErr, dErr, nErr, phErr, cErr].forEach(el => el?.classList.remove('active'));
+
+      // Validate pickup
+      if (!pInput.value.trim()) {
+        pInput.setAttribute('aria-invalid', 'true');
+        pErr?.classList.add('active');
+        if (isValid) pInput.focus();
+        isValid = false;
+      }
+
+      // Validate destination
+      if (!dInput.value.trim()) {
+        dInput.setAttribute('aria-invalid', 'true');
+        dErr?.classList.add('active');
+        if (isValid) dInput.focus();
+        isValid = false;
+      } else if (pInput.value.trim().toLowerCase() === dInput.value.trim().toLowerCase()) {
+        dInput.setAttribute('aria-invalid', 'true');
+        if (dErr) {
+          dErr.textContent = 'Destination cannot be the same as pickup.';
+          dErr.classList.add('active');
+        }
+        if (isValid) dInput.focus();
+        isValid = false;
+      }
+
+      // Validate name (2-60 letters, spaces, hyphens)
+      const nameVal = nameInput.value.trim();
+      if (!nameVal || nameVal.length < 2 || nameVal.length > 60 || !/^[A-Za-z\s\-\.]+$/.test(nameVal)) {
+        nameInput.setAttribute('aria-invalid', 'true');
+        nErr?.classList.add('active');
+        if (isValid) nameInput.focus();
+        isValid = false;
+      }
+
+      // Validate Pakistani phone
+      const phoneVal = phoneInput.value.trim();
+      const phoneCheck = validatePakistaniPhone(phoneVal);
+      if (!phoneCheck.valid) {
+        phoneInput.setAttribute('aria-invalid', 'true');
+        phErr?.classList.add('active');
+        if (isValid) phoneInput.focus();
+        isValid = false;
+      }
+
+      // Validate consent
+      if (!consentInput.checked) {
+        cErr?.classList.add('active');
+        if (isValid) consentInput.focus();
+        isValid = false;
+      }
+
+      if (!isValid) return;
+
+      // Prepare payload and open review modal
+      this.pendingBookingPayload = {
+        reference: generateReference('RQ'),
+        pickup: pInput.value.trim(),
+        destination: dInput.value.trim(),
+        ride_type: this.selectedRideType,
+        passenger_name: nameVal,
+        passenger_phone: phoneCheck.normalized,
+        passenger_phone_raw: phoneCheck.digitsOnly,
+        trip_notes: document.getElementById('tripNotes')?.value.trim() || '',
+        estimated_fare: this.currentEstimatedFare,
+        distance_km: parseFloat(this.currentDistanceKm.toFixed(1)),
+        is_route_distance: this.isDistanceRouteCalculated,
+        status: 'awaiting_confirmation',
+        created_at: new Date().toISOString()
+      };
+
+      // Populate review modal
+      const reviewContainer = document.getElementById('reviewDetails');
+      if (reviewContainer) {
+        reviewContainer.innerHTML = `
+          <div style="background: var(--paper-soft); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;">
+            <div><strong>Pickup:</strong> ${this.pendingBookingPayload.pickup}</div>
+            <div><strong>Destination:</strong> ${this.pendingBookingPayload.destination}</div>
+            <div><strong>Ride Type:</strong> ${this.pendingBookingPayload.ride_type.toUpperCase()}</div>
+            <div><strong>Passenger:</strong> ${this.pendingBookingPayload.passenger_name} (${this.pendingBookingPayload.passenger_phone})</div>
+            <div><strong>Estimated Fare:</strong> Rs. ${this.pendingBookingPayload.estimated_fare} (${this.pendingBookingPayload.distance_km} km)</div>
+            ${this.pendingBookingPayload.trip_notes ? `<div><strong>Notes:</strong> ${this.pendingBookingPayload.trip_notes}</div>` : ''}
+          </div>
+          <p style="font-size: 0.8rem; color: var(--ink-600); margin-top: 12px;">
+            Please note: Submitting sends a ride request. No driver is assigned until confirmed.
+          </p>
+        `;
+      }
+
+      Modals.open('reviewModal');
+    },
+
+    async executeBookingConfirmation() {
+      const confirmBtn = document.getElementById('btnConfirmBooking');
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Submitting Request...';
+      }
+
+      try {
+        const result = await Backend.createBooking(this.pendingBookingPayload);
+        Modals.close('reviewModal');
+
+        // Populate Success Modal
+        const successBody = document.getElementById('bookingSuccessBody');
+        if (successBody) {
+          successBody.innerHTML = `
+            <div style="background: rgba(31, 163, 122, 0.1); border: 1px solid var(--brand-500); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+              <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--brand-600); font-weight: 700;">Booking Reference</div>
+              <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--brand-900); letter-spacing: 0.05em;" id="savedRefCode">
+                ${result.reference}
+              </div>
+              <div style="font-size: 0.85rem; color: var(--brand-600); margin-top: 4px;">
+                Status: <strong>Request submitted &bull; Awaiting confirmation</strong>
+              </div>
+            </div>
+
+            <p style="line-height: 1.5; color: var(--ink-600); margin-bottom: 12px;">
+              Your rickshaw request from <strong>${result.pickup}</strong> to <strong>${result.destination}</strong> has been logged.
+            </p>
+
+            <div style="font-size: 0.82rem; background: var(--paper-soft); padding: 12px; border-radius: 6px; border: 1px solid var(--line);">
+              ${result.isDemo ? '<strong>Notice:</strong> This site is in demo mode. The request was saved in your browser storage and was not dispatched to real drivers.' : 'Our local team is reviewing available rickshaws. Please keep your phone reachable.'}
+            </div>
+          `;
+        }
+
+        // WhatsApp Share Button (only if configured)
+        const waContainer = document.getElementById('whatsappShareContainer');
+        if (waContainer) {
+          waContainer.innerHTML = '';
+          if (CONFIG.contact.whatsapp) {
+            const waMsg = encodeURIComponent(`Assalam-o-Alaikum RideQuetta, I submitted booking request ${result.reference} from ${result.pickup} to ${result.destination}.`);
+            const waBtn = document.createElement('a');
+            waBtn.href = `https://wa.me/${CONFIG.contact.whatsapp}?text=${waMsg}`;
+            waBtn.target = '_blank';
+            waBtn.rel = 'noopener noreferrer';
+            waBtn.className = 'btn-secondary';
+            waBtn.style.textAlign = 'center';
+            waBtn.textContent = 'Share Details on WhatsApp';
+            waContainer.appendChild(waBtn);
+          }
+        }
+
+        // Setup Copy Reference Button
+        const copyBtn = document.getElementById('btnCopyReference');
+        if (copyBtn) {
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(result.reference).then(() => {
+              showToast('Booking reference copied to clipboard!');
+            });
+          };
+        }
+
+        // Reset booking form
+        document.getElementById('bookingForm')?.reset();
+        document.getElementById('notesCounter').textContent = '0/300';
+        this.selectedPickupCoords = null;
+        this.selectedDestCoords = null;
+        this.calculateFare();
+
+        Modals.open('bookingSuccessModal');
+      } catch (err) {
+        showToast('Error submitting booking. Please try again.');
+        console.error(err);
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm Request';
+        }
+      }
+    }
+  };
+
+  /* ==========================================================================
+     DRIVER REGISTRATION MODULE
+     ========================================================================== */
+  const DriverModule = {
+    selectedAreas: new Set(),
+
+    init() {
+      const loadTime = document.getElementById('driverFormLoadTime');
+      if (loadTime) loadTime.value = Date.now().toString();
+
+      // CNIC Masking: 12345-1234567-1
+      const cnicInput = document.getElementById('driverCNIC');
+      if (cnicInput) {
+        cnicInput.addEventListener('input', (e) => {
+          let val = e.target.value.replace(/[^0-9]/g, '');
+          if (val.length > 13) val = val.slice(0, 13);
+          let masked = '';
+          if (val.length > 5) {
+            masked += val.slice(0, 5) + '-';
+            if (val.length > 12) {
+              masked += val.slice(5, 12) + '-' + val.slice(12);
+            } else {
+              masked += val.slice(5);
+            }
+          } else {
+            masked = val;
+          }
+          e.target.value = masked;
+        });
+      }
+
+      // Driver Notes Counter
+      const msgInput = document.getElementById('driverMessage');
+      const counter = document.getElementById('driverNotesCounter');
+      if (msgInput && counter) {
+        msgInput.addEventListener('input', () => {
+          counter.textContent = `${msgInput.value.length}/400`;
+        });
+      }
+
+      // Area chips toggle
+      const chips = document.querySelectorAll('#driverChipsContainer .area-chip');
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const area = chip.dataset.area;
+          if (this.selectedAreas.has(area)) {
+            this.selectedAreas.delete(area);
+            chip.classList.remove('selected');
+          } else {
+            this.selectedAreas.add(area);
+            chip.classList.add('selected');
+          }
+        });
+      });
+
+      // Submit listener
+      const form = document.getElementById('driverForm');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.handleSubmit();
+        });
+      }
+    },
+
+    async handleSubmit() {
+      let isValid = true;
+      const nameInput = document.getElementById('driverName');
+      const phoneInput = document.getElementById('driverPhone');
+      const cnicInput = document.getElementById('driverCNIC');
+      const regInput = document.getElementById('vehicleReg');
+      const consentInput = document.getElementById('driverConsent');
+
+      const nErr = document.getElementById('dNameError');
+      const phErr = document.getElementById('dPhoneError');
+      const cnicErr = document.getElementById('dCnicError');
+      const regErr = document.getElementById('dRegError');
+      const conErr = document.getElementById('dConsentError');
+
+      [nameInput, phoneInput, cnicInput, regInput].forEach(el => el.setAttribute('aria-invalid', 'false'));
+      [nErr, phErr, cnicErr, regErr, conErr].forEach(el => el?.classList.remove('active'));
+
+      // Validate name
+      if (!nameInput.value.trim() || nameInput.value.trim().length < 2) {
+        nameInput.setAttribute('aria-invalid', 'true');
+        nErr?.classList.add('active');
+        if (isValid) nameInput.focus();
+        isValid = false;
+      }
+
+      // Validate phone
+      const phoneCheck = validatePakistaniPhone(phoneInput.value.trim());
+      if (!phoneCheck.valid) {
+        phoneInput.setAttribute('aria-invalid', 'true');
+        phErr?.classList.add('active');
+        if (isValid) phoneInput.focus();
+        isValid = false;
+      }
+
+      // Optional CNIC validation (must be 13 digits if provided)
+      const cnicRaw = cnicInput.value.replace(/[^0-9]/g, '');
+      if (cnicRaw && cnicRaw.length !== 13) {
+        cnicInput.setAttribute('aria-invalid', 'true');
+        cnicErr?.classList.add('active');
+        if (isValid) cnicInput.focus();
+        isValid = false;
+      }
+
+      // Validate vehicle registration
+      if (!regInput.value.trim()) {
+        regInput.setAttribute('aria-invalid', 'true');
+        regErr?.classList.add('active');
+        if (isValid) regInput.focus();
+        isValid = false;
+      }
+
+      // Validate consent
+      if (!consentInput.checked) {
+        conErr?.classList.add('active');
+        if (isValid) consentInput.focus();
+        isValid = false;
+      }
+
+      if (!isValid) return;
+
+      const submitBtn = document.getElementById('btnSubmitDriver');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting Application...';
+      }
+
+      const payload = {
+        reference: generateReference('DR'),
+        full_name: nameInput.value.trim(),
+        mobile: phoneCheck.normalized,
+        cnic_masked: cnicInput.value.trim() || null,
+        vehicle_reg: regInput.value.trim(),
+        vehicle_type: document.getElementById('vehicleType')?.value,
+        service_areas: Array.from(this.selectedAreas),
+        licence_status: document.getElementById('licenceStatus')?.value,
+        message: document.getElementById('driverMessage')?.value.trim() || '',
+        status: 'pending_review',
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        const result = await Backend.createDriverRegistration(payload);
+        const successBody = document.getElementById('driverSuccessBody');
+        if (successBody) {
+          successBody.innerHTML = `
+            <div style="background: rgba(31, 163, 122, 0.1); border: 1px solid var(--brand-500); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+              <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--brand-600); font-weight: 700;">Registration Reference</div>
+              <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--brand-900); letter-spacing: 0.05em;">
+                ${result.reference}
+              </div>
+              <div style="font-size: 0.85rem; color: var(--brand-600); margin-top: 4px;">
+                Status: <strong>Application Received</strong>
+              </div>
+            </div>
+            <p style="color: var(--ink-600); line-height: 1.5; margin-bottom: 12px;">
+              Thank you, <strong>${result.full_name}</strong>. Your driver registration interest has been recorded.
+            </p>
+            <div style="font-size: 0.82rem; background: var(--paper-soft); padding: 12px; border-radius: 6px; border: 1px solid var(--line);">
+              ${result.isDemo ? '<strong>Demo Mode:</strong> Application saved locally. In live operation, our team contacts drivers for verification before booking activation.' : 'Our onboarding team will contact you for verification.'}
+            </div>
+          `;
+        }
+        document.getElementById('driverForm')?.reset();
+        this.selectedAreas.clear();
+        document.querySelectorAll('#driverChipsContainer .area-chip').forEach(c => c.classList.remove('selected'));
+        Modals.open('driverSuccessModal');
+      } catch (err) {
+        showToast('Registration failed. Please check your network.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Driver Registration';
+        }
+      }
+    }
+  };
+
+  /* ==========================================================================
+     TRACKING & CONTACT MODULE
+     ========================================================================== */
+  const TrackingModule = {
+    init() {
+      const trackBtn = document.getElementById('btnTrackStatus');
+      const trackInput = document.getElementById('trackInput');
+      const resultCard = document.getElementById('trackResultCard');
+
+      if (!trackBtn || !trackInput || !resultCard) return;
+
+      trackBtn.addEventListener('click', async () => {
+        const ref = trackInput.value.trim().toUpperCase();
+        if (!ref) {
+          showToast('Please enter a booking reference code.');
+          return;
+        }
+
+        resultCard.innerHTML = '<div style="color: var(--ink-600);">Searching request records...</div>';
+        resultCard.classList.add('active');
+
+        const booking = await Backend.getBookingStatus(ref);
+        if (booking) {
+          resultCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong style="color: var(--brand-900);">${booking.reference}</strong>
+              <span style="font-size: 0.78rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px; font-weight: 600;">
+                ${booking.status.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
+            <div style="font-size: 0.88rem; color: var(--ink-600);">
+              <div><strong>Route:</strong> ${booking.pickup} &rarr; ${booking.destination}</div>
+              <div style="font-size: 0.8rem; color: var(--ink-300); margin-top: 4px;">Logged: ${new Date(booking.created_at).toLocaleString()}</div>
+            </div>
+            ${booking.isDemo ? '<div style="font-size: 0.78rem; color: #b45309; margin-top: 8px;">Notice: Retrieved from local demo storage.</div>' : ''}
+          `;
+        } else {
+          resultCard.innerHTML = `
+            <div style="color: #b91c1c; font-size: 0.9rem;">
+              No booking request found with reference <strong>${ref}</strong>. In demo mode, status is only stored in the browser where the request was originally submitted.
+            </div>
+          `;
+        }
+      });
+    }
+  };
+
+  const ContactModule = {
+    init() {
+      const detailsCard = document.getElementById('contactDetailsCard');
+      if (detailsCard) {
+        const hasDetails = Boolean(CONFIG.contact.phone || CONFIG.contact.whatsapp || CONFIG.contact.email);
+        if (hasDetails) {
+          detailsCard.innerHTML = `
+            <h3 style="margin-bottom: 16px; font-size: 1.3rem;">Quetta Headquarters</h3>
+            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.92rem; color: var(--ink-600);">
+              ${CONFIG.contact.address ? `<div><strong>Address:</strong> ${CONFIG.contact.address}</div>` : ''}
+              ${CONFIG.contact.phone ? `<div><strong>Phone:</strong> <a href="tel:${CONFIG.contact.phone}" style="color: var(--brand-600);">${CONFIG.contact.phone}</a></div>` : ''}
+              ${CONFIG.contact.email ? `<div><strong>Email:</strong> <a href="mailto:${CONFIG.contact.email}" style="color: var(--brand-600);">${CONFIG.contact.email}</a></div>` : ''}
+              ${CONFIG.contact.whatsapp ? `<div style="margin-top: 8px;"><a href="https://wa.me/${CONFIG.contact.whatsapp}" class="btn-secondary" target="_blank" rel="noopener noreferrer">Chat on WhatsApp &rarr;</a></div>` : ''}
+            </div>
+          `;
+        } else {
+          detailsCard.innerHTML = `
+            <h3 style="margin-bottom: 12px; font-size: 1.3rem;">Contact Channels</h3>
+            <p style="font-size: 0.9rem; color: var(--ink-600); line-height: 1.6;">
+              Direct phone and office channels will be published once our initial registration phase concludes. Please submit any inquiries using the adjacent form.
+            </p>
+          `;
+        }
+      }
+
+      const form = document.getElementById('contactForm');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const name = document.getElementById('cName')?.value.trim();
+          const contact = document.getElementById('cContact')?.value.trim();
+          const message = document.getElementById('cMessage')?.value.trim();
+
+          if (!name || !contact || !message) {
+            showToast('Please fill in all contact fields.');
+            return;
+          }
+
+          await Backend.createContactMessage({
+            name, contact, message, date: new Date().toISOString()
+          });
+
+          form.reset();
+          showToast('Inquiry sent! Thank you for reaching out to RideQuetta.');
+        });
+      }
+    }
+  };
+
+  /* ==========================================================================
+     INTERACTIVE MAP MODULE (LEAFLET + OSM)
+     ========================================================================== */
+  const MapModule = {
+    map: null,
+    pickupMarker: null,
+    destMarker: null,
+    routeLine: null,
+    isInitialized: false,
+
+    init() {
+      // Lazy initialize map when it scrolls into view
+      const mapContainer = document.getElementById('map');
+      if (!mapContainer) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !this.isInitialized) {
+          this.setupMap();
+          observer.disconnect();
+        }
+      }, { threshold: 0.1 });
+
+      observer.observe(mapContainer);
+    },
+
+    setupMap() {
+      if (typeof L === 'undefined') {
+        const fallback = document.getElementById('mapFallback');
+        if (fallback) fallback.style.display = 'flex';
+        return;
+      }
+
+      try {
+        this.map = L.map('map', {
+          center: MAP_DEFAULT_CENTER,
+          zoom: MAP_DEFAULT_ZOOM,
+          scrollWheelZoom: false
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 18
+        }).addTo(this.map);
+
+        this.map.on('click', (e) => this.handleMapClick(e.latlng));
+        this.isInitialized = true;
+      } catch (e) {
+        console.warn('Map initialization failed', e);
+        const fallback = document.getElementById('mapFallback');
+        if (fallback) fallback.style.display = 'flex';
+      }
+    },
+
+    handleMapClick(latlng) {
+      if (!BookingModule.selectedPickupCoords) {
+        BookingModule.selectedPickupCoords = { lat: latlng.lat, lng: latlng.lng };
+        const nearest = this.findNearestLocation(latlng.lat, latlng.lng);
+        document.getElementById('pickupInput').value = nearest ? nearest.name : `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+        showToast('Pickup set on map. Now click to set Destination.');
+      } else {
+        BookingModule.selectedDestCoords = { lat: latlng.lat, lng: latlng.lng };
+        const nearest = this.findNearestLocation(latlng.lat, latlng.lng);
+        document.getElementById('destInput').value = nearest ? nearest.name : `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+        showToast('Destination set on map.');
+      }
+      this.updateMarkers();
+      BookingModule.calculateFare();
+    },
+
+    findNearestLocation(lat, lng) {
+      let closest = null;
+      let minDistance = Infinity;
+      LOCATIONS.forEach(loc => {
+        const d = haversineDistance(lat, lng, loc.lat, loc.lng);
+        if (d < minDistance) {
+          minDistance = d;
+          closest = loc;
+        }
+      });
+      return minDistance < 1.5 ? closest : null;
+    },
+
+    updateMarkers() {
+      if (!this.map || typeof L === 'undefined') return;
+
+      const pCoords = BookingModule.selectedPickupCoords;
+      const dCoords = BookingModule.selectedDestCoords;
+
+      if (pCoords) {
+        if (!this.pickupMarker) {
+          this.pickupMarker = L.marker([pCoords.lat, pCoords.lng], { draggable: true })
+            .addTo(this.map)
+            .bindPopup('Pickup Location');
+          this.pickupMarker.on('dragend', (e) => {
+            const pos = e.target.getLatLng();
+            BookingModule.selectedPickupCoords = { lat: pos.lat, lng: pos.lng };
+            BookingModule.calculateFare();
+          });
+        } else {
+          this.pickupMarker.setLatLng([pCoords.lat, pCoords.lng]);
+        }
+      } else if (this.pickupMarker) {
+        this.map.removeLayer(this.pickupMarker);
+        this.pickupMarker = null;
+      }
+
+      if (dCoords) {
+        if (!this.destMarker) {
+          this.destMarker = L.marker([dCoords.lat, dCoords.lng], { draggable: true })
+            .addTo(this.map)
+            .bindPopup('Destination');
+          this.destMarker.on('dragend', (e) => {
+            const pos = e.target.getLatLng();
+            BookingModule.selectedDestCoords = { lat: pos.lat, lng: pos.lng };
+            BookingModule.calculateFare();
+          });
+        } else {
+          this.destMarker.setLatLng([dCoords.lat, dCoords.lng]);
+        }
+      } else if (this.destMarker) {
+        this.map.removeLayer(this.destMarker);
+        this.destMarker = null;
+      }
+
+      if (pCoords && dCoords) {
+        const bounds = L.latLngBounds([pCoords.lat, pCoords.lng], [dCoords.lat, dCoords.lng]);
+        this.map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    },
+
+    drawRoutePolyline(coordinates) {
+      if (!this.map || typeof L === 'undefined') return;
+      if (this.routeLine) {
+        this.map.removeLayer(this.routeLine);
+      }
+      // GeoJSON coordinates are [lng, lat]
+      const latLngs = coordinates.map(c => [c[1], c[0]]);
+      this.routeLine = L.polyline(latLngs, {
+        color: '#16805f',
+        weight: 5,
+        opacity: 0.85
+      }).addTo(this.map);
+    },
+
+    drawSimpleLine(pLoc, dLoc) {
+      if (!this.map || typeof L === 'undefined') return;
+      if (this.routeLine) {
+        this.map.removeLayer(this.routeLine);
+      }
+      this.routeLine = L.polyline([
+        [pLoc.lat, pLoc.lng],
+        [dLoc.lat, dLoc.lng]
+      ], {
+        color: '#f5b301',
+        weight: 4,
+        dashArray: '6, 8',
+        opacity: 0.8
+      }).addTo(this.map);
+    }
+  };
+
+  /* ==========================================================================
+     MODALS & ACCORDION CONTROLLER
+     ========================================================================== */
+  const Modals = {
+    activeModal: null,
+    previouslyFocused: null,
+
+    open(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      this.previouslyFocused = document.activeElement;
+      modal.classList.add('open');
+      this.activeModal = modal;
+      document.body.style.overflow = 'hidden';
+
+      const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length) focusable[0].focus();
+    },
+
+    close(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      modal.classList.remove('open');
+      this.activeModal = null;
+      document.body.style.overflow = '';
+      if (this.previouslyFocused) this.previouslyFocused.focus();
+    },
+
+    init() {
+      // Backdrop clicks
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            this.close(overlay.id);
+          }
+        });
+      });
+
+      // Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.activeModal) {
+          this.close(this.activeModal.id);
+        }
+      });
+
+      // Close buttons
+      document.getElementById('btnCloseReview')?.addEventListener('click', () => this.close('reviewModal'));
+      document.getElementById('btnCloseSuccess')?.addEventListener('click', () => this.close('bookingSuccessModal'));
+      document.getElementById('btnDoneBooking')?.addEventListener('click', () => this.close('bookingSuccessModal'));
+      document.getElementById('btnCloseDriverSuccess')?.addEventListener('click', () => this.close('driverSuccessModal'));
+      document.getElementById('btnDoneDriver')?.addEventListener('click', () => this.close('driverSuccessModal'));
+      document.getElementById('btnCloseAppModal')?.addEventListener('click', () => this.close('appInfoModal'));
+      document.getElementById('btnDoneAppModal')?.addEventListener('click', () => this.close('appInfoModal'));
+      document.getElementById('btnCloseLegalModal')?.addEventListener('click', () => this.close('legalModal'));
+      document.getElementById('btnDoneLegalModal')?.addEventListener('click', () => this.close('legalModal'));
+
+      // App buttons
+      document.getElementById('btnAppIos')?.addEventListener('click', () => this.open('appInfoModal'));
+      document.getElementById('btnAppAndroid')?.addEventListener('click', () => this.open('appInfoModal'));
+
+      // Legal links
+      document.getElementById('linkAboutModal')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showLegal('About RideQuetta', `
+          <p><strong>RideQuetta</strong> is a dedicated rickshaw booking initiative established to bring digital convenience and upfront fare clarity to Quetta, Balochistan.</p>
+          <p style="margin-top: 10px;">Our platform connects passengers with independent passenger rickshaws operating across key hubs like Jinnah Town, Brewery Road, Satellite Town, and Quetta Cantt.</p>
+          <div style="margin-top: 14px; font-size: 0.8rem; background: var(--paper-soft); padding: 8px 12px; border-radius: 4px;">
+            Draft document &bull; Subject to business registration and regulatory filing.
+          </div>
+        `);
+      });
+
+      document.getElementById('linkPrivacyModal')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showLegal('Privacy Policy', `
+          <p>We respect your privacy. RideQuetta collects only minimal trip details (rider name, contact telephone, pickup and destination localities) required to match and complete local rickshaw transit.</p>
+          <p style="margin-top: 10px;">We do not sell personal contact data to third parties. In demo mode, your data remains stored purely in your browser.</p>
+          <div style="margin-top: 14px; font-size: 0.8rem; background: var(--paper-soft); padding: 8px 12px; border-radius: 4px;">
+            Draft policy &bull; Pending final legal counsel review.
+          </div>
+        `);
+      });
+
+      document.getElementById('linkTermsModal')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showLegal('Terms of Service', `
+          <p>By requesting a booking through RideQuetta, passengers acknowledge that fare quotes are reasonable route estimates and final payment is made directly upon ride completion.</p>
+          <p style="margin-top: 10px;">RideQuetta serves as a communication and request medium. Drivers are independent operators responsible for vehicle compliance and safe driving on public roadways.</p>
+          <div style="margin-top: 14px; font-size: 0.8rem; background: var(--paper-soft); padding: 8px 12px; border-radius: 4px;">
+            Draft terms &bull; Pending final legal counsel review.
+          </div>
+        `);
+      });
+    },
+
+    showLegal(title, htmlContent) {
+      document.getElementById('legalModalTitle').textContent = title;
+      document.getElementById('legalModalBody').innerHTML = htmlContent;
+      this.open('legalModal');
+    }
+  };
+
+  /* ==========================================================================
+     ACCORDION & NAVIGATION CONTROLLER
+     ========================================================================== */
+  const UIModule = {
+    init() {
+      // Sticky header scroll behavior
+      const header = document.getElementById('siteHeader');
+      let lastScroll = 0;
+
+      window.addEventListener('scroll', () => {
+        const curScroll = window.scrollY;
+        if (curScroll > 20) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+
+        if (curScroll > lastScroll && curScroll > 300) {
+          header.classList.add('header-hidden');
+        } else {
+          header.classList.remove('header-hidden');
+        }
+        lastScroll = curScroll;
+      }, { passive: true });
+
+      // Mobile drawer
+      const hamburger = document.getElementById('btnHamburger');
+      const drawer = document.getElementById('mobileDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      const closeDrawer = document.getElementById('btnCloseDrawer');
+
+      const toggleDrawer = (open) => {
+        drawer.classList.toggle('open', open);
+        backdrop.classList.toggle('open', open);
+        hamburger.setAttribute('aria-expanded', open.toString());
+        drawer.setAttribute('aria-hidden', (!open).toString());
+        document.body.style.overflow = open ? 'hidden' : '';
+      };
+
+      if (hamburger) hamburger.addEventListener('click', () => toggleDrawer(true));
+      if (closeDrawer) closeDrawer.addEventListener('click', () => toggleDrawer(false));
+      if (backdrop) backdrop.addEventListener('click', () => toggleDrawer(false));
+
+      document.querySelectorAll('.drawer-link').forEach(link => {
+        link.addEventListener('click', () => toggleDrawer(false));
+      });
+
+      // Active section highlighting
+      const sections = document.querySelectorAll('section[id], header');
+      const navLinks = document.querySelectorAll('.main-nav .nav-link');
+
+      const sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            navLinks.forEach(link => {
+              const href = link.getAttribute('href').replace('#', '');
+              link.classList.toggle('active', href === id || (id === 'top' && href === 'top'));
+            });
+          }
+        });
+      }, { threshold: 0.3 });
+
+      sections.forEach(s => sectionObserver.observe(s));
+
+      // FAQ Accordion
+      const faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(item => {
+        const btn = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        btn.addEventListener('click', () => {
+          const isOpen = item.classList.contains('open');
+          // Close others
+          faqItems.forEach(other => {
+            other.classList.remove('open');
+            other.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+            other.querySelector('.faq-answer').style.maxHeight = null;
+          });
+          if (!isOpen) {
+            item.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+          }
+        });
+      });
+
+      // Back to start button
+      const backToStart = document.getElementById('btnBackToStart');
+      if (backToStart) {
+        backToStart.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+
+      // Footer area links
+      document.querySelectorAll('.footer-area-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const loc = link.dataset.loc;
+          const pInput = document.getElementById('pickupInput');
+          if (pInput) {
+            pInput.value = loc;
+            const found = LOCATIONS.find(l => l.name.toLowerCase() === loc.toLowerCase());
+            BookingModule.selectedPickupCoords = found ? { lat: found.lat, lng: found.lng } : null;
+            document.getElementById('book')?.scrollIntoView({ behavior: 'smooth' });
+            pInput.focus();
+            showToast(`Pickup set to ${loc}`);
+            BookingModule.calculateFare();
+          }
+        });
+      });
+    }
+  };
+
+  /* ==========================================================================
+     PAGE INITIALIZATION
+     ========================================================================== */
+  function initializeApp() {
+    CinemaEngine.init();
+    BookingModule.init();
+    DriverModule.init();
+    TrackingModule.init();
+    ContactModule.init();
+    MapModule.init();
+    Modals.init();
+    UIModule.init();
+    document.documentElement.classList.add('js-anim');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  } else {
+    initializeApp();
+  }
+
+  </script>
+</body>
+</html>
